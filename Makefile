@@ -54,7 +54,7 @@ security: ## bandit static analysis
 
 audit: ## Dependency vulnerability audit
 	mkdir -p $(ARTIFACTS)
-	$(BIN)/pip-audit --progress-spinner off
+	$(BIN)/pip-audit --progress-spinner off --skip-editable
 
 evidence: ## Refresh dependency licence/advisory evidence (needs network)
 	$(BIN)/python scripts/audit_dependencies.py

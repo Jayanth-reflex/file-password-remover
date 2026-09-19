@@ -52,7 +52,7 @@ run pytest              "$PY" -m pytest -q --cov=fpr --cov=fpr_gui --cov-report=
 run pytest-slow         "$PY" -m pytest -q -m slow
 run pytest-security     "$PY" -m pytest -q tests/security -v
 run bandit              "$BIN/bandit" -q -c pyproject.toml -r src
-run pip-audit           "$BIN/pip-audit" --progress-spinner off
+run pip-audit           "$BIN/pip-audit" --progress-spinner off --skip-editable
 run docs-links          "$PY" scripts/check_docs.py
 run dependency-evidence "$PY" scripts/audit_dependencies.py
 run upstream-repro      "$PY" scripts/repro_msoffcrypto_encrypt.py
