@@ -1,0 +1,114 @@
+# Mobile
+
+## Status: no mobile application ships in 1.0.0
+
+Not "coming soon", not a stub, not a placeholder project you could mistake for
+progress. There is no iOS app and no Android app in this repository, and the
+README's platform table says so.
+
+This document exists because the design work was done and is worth keeping, and
+because "why not?" deserves a real answer rather than silence.
+
+## Why not
+
+Shipping a mobile app means shipping something that was **built, run and
+verified**. On the machine this release was produced on:
+
+| Requirement | Present |
+| --- | --- |
+| Xcode | yes |
+| iOS signing identity / provisioning profile | **no** |
+| Apple Developer Program membership | **no** |
+| Android SDK | **no** |
+| Gradle | **no** |
+| Android signing keystore | **no** |
+| A physical device or store account | **no** |
+
+An "iOS app" produced here would be an unbuilt, unsigned, untested Xcode
+project. The project's own rules — no fake integrations, no unverified platform
+claims, nothing marked complete without tests and evidence — rule that out.
+Recorded as [ADR-0010](../docs/adr/0010-no-mobile-app-this-release.md).
+
+## What a real mobile port would look like
+
+### The hard part is not the UI
+
+The engine is Python, and Python is not a practical runtime for a shipping
+mobile app in this stack. CPython 3.13 added official iOS and Android targets,
+but embedding it, and embedding pikepdf (which needs qpdf, a C++ library) plus
+pycryptodome, is a build problem larger than the app itself.
+
+So a mobile port is a **reimplementation of the adapters**, sharing the design
+and the test vectors rather than the code:
+
+| Format | iOS | Android |
+| --- | --- | --- |
+| **PDF** | `PDFKit`: `PDFDocument(url:)` then `unlock(withPassword:)`, `write(to:)`. Handles the standard security handler | `PdfRenderer` cannot decrypt. Needs a bundled library — Apache PDFBox (Apache-2.0) is the realistic choice |
+| **ZIP (AES / ZipCrypto)** | No system API. Bundle a C library (minizip-ng, Zlib licence) or implement it — the formats are small | Same; `java.util.zip` has no encryption support |
+| **OOXML (ECMA-376)** | No system API. Implement the agile scheme on CryptoKit — it is AES-CBC plus an iterated SHA-512, and this repository's `ooxml_agile.py` is a complete, readable reference | Same, on `javax.crypto` |
+| **7-Zip** | Out of scope on mobile | Out of scope on mobile |
+
+The two fixture generators in `src/fpr/testing/` are the most valuable thing
+this repository could hand a mobile port: they produce known-good encrypted
+files from the specifications, so a Swift or Kotlin decryptor can be tested
+against vectors that were never produced by the library it is replacing.
+
+### Platform integration
+
+**iOS**
+- A **Share Extension** so a protected file arriving in Mail or Files can be
+  sent straight to the app.
+- `UIDocumentPickerViewController` for direct selection, and security-scoped
+  bookmarks for anything outside the app container.
+- Write the output into the app's Documents directory, then offer to save it
+  back through the picker. Writing in place is not possible for most sources.
+- An **App Intent** so the operation is scriptable from Shortcuts.
+- Passwords go nowhere near the keyboard's predictive text: the field is
+  `.textContentType(.password)` with autocorrect and autofill disabled.
+
+**Android**
+- `ACTION_OPEN_DOCUMENT` via the Storage Access Framework, and
+  `ACTION_CREATE_DOCUMENT` for the output.
+- A share-target `intent-filter` for the same arrival path as iOS.
+- All work in a `WorkManager` job so a large file survives a screen rotation.
+- `FLAG_SECURE` on the password screen to keep it out of the recents
+  thumbnail.
+
+### What must not change on mobile
+
+Everything in [`policy.py`](../src/fpr/policy.py) applies identically. In
+particular: no bypass of PDF permission restrictions without the owner
+password; verify the output before reporting success; no network; and no
+temporary file left in a location another app can read — on Android, that means
+`Context.getCacheDir()` and never external storage.
+
+### App Review
+
+Both stores have rejected tools in this category. The framing that works is the
+one the product is actually built on: the user supplies the password, the tool
+does not circumvent anything, and DRM is explicitly out of scope. The
+[format matrix](../docs/product/format-matrix.md) and
+[abuse cases](../docs/security/abuse-cases.md) are written so they can be
+attached to a review response verbatim.
+
+## What mobile users can do today
+
+The CLI runs anywhere CPython does, which on a phone means **a-Shell** or
+**iSH** on iOS and **Termux** on Android:
+
+```bash
+pip install file-password-remover
+fpr remove ~/Downloads/report.pdf
+```
+
+This works and it is a workaround, not mobile support. It is listed here as
+what it is; the README's platform table still says *not shipped*, because a
+terminal emulator someone else maintains is not a product this project can
+stand behind.
+
+## If you want to build it
+
+Start with `src/fpr/testing/` — port the fixture generators first and get them
+producing files that this repository's adapters can decrypt. That gives you a
+test harness before you have written a single line of decryption code, which is
+the right order.

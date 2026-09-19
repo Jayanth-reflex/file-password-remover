@@ -1,0 +1,66 @@
+# Changelog
+
+All notable changes to this project are documented here. The format follows
+[Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project uses
+[Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+
+## [1.0.0] — 2026-09-19
+
+First release.
+
+### Added
+
+**Core**
+- Local removal of password protection with post-write verification: an output
+  is published only after it has been re-read from disk and proved to be
+  readable and unprotected.
+- Atomic output via a `0600` temp file in the destination's own directory and
+  `os.replace`; the source is never modified unless `--in-place` is given.
+- A password container that holds a wipeable buffer, refuses to be pickled,
+  copied, formatted or logged, and zeroes itself when the operation ends.
+- A policy layer (R1–R5) enforced before a password is requested and again at
+  the point of decryption.
+
+**Formats**
+- PDF: standard security handler R2–R6 (RC4-40, RC4-128, AES-128, AES-256).
+- Office Open XML: ECMA-376 agile and standard encryption.
+- ZIP: WinZip AES-128/192/256 and legacy ZipCrypto.
+- 7-Zip: AES-256 including encrypted headers, as an optional extra.
+- Legacy Office 97–2003: detection supported; decryption experimental and
+  gated behind `--experimental`.
+
+**Interfaces**
+- `fpr` CLI with `inspect`, `remove`, `formats` and `version`; JSON output;
+  batch mode with per-item reporting; stable documented exit codes.
+- Password input via fd, stdin, file, environment or prompt. `--password VALUE`
+  is refused with an explanation.
+- `fpr-gui`, a Tkinter desktop window over the same engine.
+- A documented Python API (`fpr.inspect`, `fpr.remove`).
+
+**Project**
+- Threat model, abuse-case analysis, security design and privacy statement.
+- Ten architecture decision records.
+- Open-source landscape survey and a dependency licence/advisory analysis
+  backed by machine-readable evidence.
+- Fixture generators written from the specifications — a CFB/OLE writer, an
+  ECMA-376 agile encryptor and a ZipCrypto writer — so the Office and ZIP tests
+  are cross-implementation rather than round trips.
+- 276 automated tests; ruff, mypy `--strict`, bandit, pip-audit and gitleaks in
+  CI.
+
+### Known limitations
+
+See [docs/reports/known-limitations.md](docs/reports/known-limitations.md). The
+headlines: no mobile application ships in this release
+([ADR-0010](docs/adr/0010-no-mobile-app-this-release.md)); Office decryption
+buffers the whole package in memory; and temp-file scrubbing cannot guarantee
+erasure on modern storage.
+
+### Security
+
+- No network code in the package, enforced by a test.
+- No telemetry, crash reporting or update check.
+- Zero findings from bandit; zero known advisories in any pinned dependency as
+  of 2026-09-19.
+
+[1.0.0]: https://github.com/Jayanth-reflex/file-password-remover/releases/tag/v1.0.0

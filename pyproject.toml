@@ -1,0 +1,145 @@
+[build-system]
+requires = ["hatchling>=1.25"]
+build-backend = "hatchling.build"
+
+[project]
+name = "file-password-remover"
+version = "1.0.0"
+description = "Remove password protection from files you own, locally, after you supply the correct password."
+readme = "README.md"
+requires-python = ">=3.10"
+license = "Apache-2.0"
+license-files = ["LICENSE", "NOTICE"]
+authors = [{ name = "Jayanth-reflex" }]
+keywords = ["pdf", "office", "zip", "decrypt", "password", "privacy", "offline"]
+classifiers = [
+  "Development Status :: 5 - Production/Stable",
+  "Environment :: Console",
+  "Intended Audience :: End Users/Desktop",
+  "Operating System :: MacOS :: MacOS X",
+  "Operating System :: Microsoft :: Windows",
+  "Operating System :: POSIX :: Linux",
+  "Programming Language :: Python :: 3 :: Only",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: 3.13",
+  "Topic :: Security :: Cryptography",
+  "Topic :: Utilities",
+  "Typing :: Typed",
+]
+
+# Runtime dependencies are deliberately minimal and all permissively licensed.
+#   pikepdf         MPL-2.0        (bundles qpdf, Apache-2.0)
+#   msoffcrypto-tool MIT
+#   pyzipper        MIT            (bundles pycryptodomex, BSD + Public Domain)
+# See docs/research/01-dependency-license-analysis.md
+dependencies = [
+  "pikepdf>=9,<11",
+  "msoffcrypto-tool>=5.4,<7",
+  "pyzipper>=0.3.6,<1",
+]
+
+[project.optional-dependencies]
+# py7zr is LGPL-2.1-or-later. It is NOT installed by default and is NOT bundled
+# into the signed binaries, so the default distribution stays permissive-only.
+# See docs/adr/0006-optional-lgpl-sevenzip-extra.md
+sevenzip = ["py7zr>=0.20,<2"]
+gui = []  # tkinter ships with CPython; listed for discoverability only
+dev = [
+  "pytest>=8",
+  "pytest-cov>=5",
+  "ruff>=0.6",
+  "mypy>=1.11",
+  "bandit>=1.7",
+  "pip-audit>=2.7",
+  "types-setuptools",
+]
+build = ["pyinstaller>=6.6", "hatchling>=1.25"]
+
+[project.urls]
+Homepage = "https://github.com/Jayanth-reflex/file-password-remover"
+Documentation = "https://github.com/Jayanth-reflex/file-password-remover/tree/main/docs"
+Issues = "https://github.com/Jayanth-reflex/file-password-remover/issues"
+Changelog = "https://github.com/Jayanth-reflex/file-password-remover/blob/main/CHANGELOG.md"
+
+[project.scripts]
+fpr = "fpr.cli.main:main"
+
+[project.gui-scripts]
+fpr-gui = "fpr_gui.app:main"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/fpr", "src/fpr_gui"]
+
+[tool.hatch.build.targets.sdist]
+include = ["src", "tests", "docs", "packaging", "scripts", "README.md", "LICENSE", "NOTICE", "CHANGELOG.md"]
+
+# ---------------------------------------------------------------- tooling ---
+[tool.ruff]
+line-length = 100
+target-version = "py310"
+src = ["src", "tests"]
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "B", "UP", "S", "C4", "RET", "SIM", "PTH", "ARG", "TID"]
+ignore = [
+  "S101",   # assert: used intentionally in tests and internal invariants
+  "E501",   # line length handled by the formatter
+  "SIM108", # ternaries are not always clearer
+  "TID252", # relative imports inside the package are the house style
+]
+
+[tool.ruff.lint.per-file-ignores]
+# Tests deliberately use literal passwords, temp paths and subprocess calls.
+"tests/**" = ["S105", "S106", "S108", "S603", "S607", "ARG001", "ARG002", "SIM117", "SLF001"]
+# Fixture builders embed sample passwords on purpose.
+"src/fpr/testing/**" = ["S105", "S106", "B008"]
+# The enum *members* are named after protection kinds, not credentials.
+"src/fpr/types.py" = ["S105"]
+# The Adapter interface fixes the signature; not every adapter uses every
+# argument, and renaming them to _ would make the contract harder to read.
+"src/fpr/adapters/**" = ["ARG002", "ARG003"]
+# securefs is the module that is *supposed* to use the low-level os calls:
+# pathlib has no fsync, no atomic replace and no "open without following
+# symlinks", which is exactly what this module needs.
+"src/fpr/securefs.py" = ["PTH101", "PTH105", "PTH106", "PTH107", "PTH123"]
+# Developer utilities: the audit script is the one place that talks to the
+# network, and the reproduction script uses a literal sample password.
+"scripts/audit_dependencies.py" = ["S310"]
+"scripts/repro_msoffcrypto_encrypt.py" = ["S106"]
+# The screenshot helper shells out to macOS screencapture with paths it built.
+"scripts/gui_screenshot.py" = ["S603"]
+
+[tool.mypy]
+python_version = "3.10"
+files = ["src"]
+strict = true
+warn_unreachable = true
+disallow_untyped_defs = true
+no_implicit_reexport = true
+
+[[tool.mypy.overrides]]
+module = ["pikepdf.*", "msoffcrypto.*", "pyzipper.*", "py7zr.*", "olefile.*"]
+ignore_missing_imports = true
+
+[tool.pytest.ini_options]
+minversion = "8.0"
+testpaths = ["tests"]
+addopts = "-ra --strict-markers --strict-config"
+markers = [
+  "slow: performance / large-file tests (deselect with -m 'not slow')",
+  "sevenzip: requires the optional py7zr extra",
+  "gui: requires a usable tkinter build",
+]
+filterwarnings = ["error::DeprecationWarning:fpr.*"]
+
+[tool.coverage.run]
+branch = true
+source = ["src/fpr"]
+
+[tool.coverage.report]
+exclude_lines = ["pragma: no cover", "if TYPE_CHECKING:", "raise NotImplementedError"]
+
+[tool.bandit]
+exclude_dirs = ["tests", ".venv", "build", "dist"]

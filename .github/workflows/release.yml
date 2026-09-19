@@ -1,0 +1,98 @@
+name: Release
+
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Tag to build (e.g. v1.0.0)"
+        required: true
+
+permissions:
+  contents: write
+
+jobs:
+  sdist-wheel:
+    name: wheel + sdist
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install build twine
+      - run: python -m build
+      - run: twine check dist/*
+      - run: bash scripts/verify_install.sh
+      - uses: actions/upload-artifact@v4
+        with:
+          name: python-dist
+          path: dist/*
+
+  bundles:
+    name: desktop bundle (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install Tk (Linux)
+        if: runner.os == 'Linux'
+        run: sudo apt-get update && sudo apt-get install -y python3-tk
+      - run: pip install -e ".[build]"
+      - name: Build and smoke-test the bundle
+        shell: bash
+        run: bash scripts/build_desktop.sh
+      - name: Archive
+        shell: bash
+        run: |
+          cd dist
+          if [ "$RUNNER_OS" = "Windows" ]; then
+            7z a "file-password-remover-${{ runner.os }}-${{ runner.arch }}.zip" file-password-remover
+          else
+            tar czf "file-password-remover-${{ runner.os }}-${{ runner.arch }}.tar.gz" file-password-remover
+          fi
+      - uses: actions/upload-artifact@v4
+        with:
+          name: bundle-${{ matrix.os }}
+          path: |
+            dist/*.tar.gz
+            dist/*.zip
+
+  publish:
+    name: checksums and draft release
+    needs: [sdist-wheel, bundles]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          path: staging
+      - name: Collect artifacts
+        run: |
+          mkdir -p dist
+          find staging -type f \( -name '*.whl' -o -name '*.tar.gz' -o -name '*.zip' \) \
+            -exec cp {} dist/ \;
+          ls -la dist
+      - name: Checksums
+        run: bash scripts/checksums.sh
+      - name: Draft a release
+        uses: softprops/action-gh-release@v2
+        with:
+          draft: true
+          generate_release_notes: true
+          files: |
+            dist/*
+          body: |
+            See CHANGELOG.md for what changed, and
+            docs/reports/known-limitations.md for what this release does not do.
+
+            Signing status: the bundles produced by this workflow are
+            **unsigned**. Signing and notarisation require identities that are
+            not stored in this repository; see docs/ops/release.md.

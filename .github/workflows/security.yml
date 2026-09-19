@@ -1,0 +1,80 @@
+name: Security
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  schedule:
+    # Weekly, because "no known vulnerabilities" is a statement with a shelf life.
+    - cron: "17 6 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  security-events: write
+
+jobs:
+  static-analysis:
+    name: bandit
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - run: pip install bandit[toml]
+      - name: bandit over src/
+        run: bandit -q -c pyproject.toml -r src
+      - name: machine-readable report
+        if: always()
+        run: bandit -q -c pyproject.toml -r src -f json -o bandit.json || true
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: bandit
+          path: bandit.json
+
+  dependencies:
+    name: vulnerable dependencies
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - run: pip install -e ".[dev,sevenzip]"
+      - name: pip-audit
+        run: pip-audit --progress-spinner off --strict
+      - name: OSV query and licence evidence
+        run: python scripts/audit_dependencies.py
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: dependency-evidence
+          path: docs/research/evidence/*.json
+
+  secrets:
+    name: secret scanning
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  policy:
+    name: policy and privacy invariants
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - run: pip install -e ".[dev,sevenzip]"
+      - name: abuse cases, leak tests, and the no-network guarantee
+        run: python -m pytest -q tests/security -v

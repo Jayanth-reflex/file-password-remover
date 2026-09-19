@@ -1,0 +1,134 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  PYTHONDONTWRITEBYTECODE: "1"
+  PIP_DISABLE_PIP_VERSION_CHECK: "1"
+
+jobs:
+  lint:
+    name: lint + types
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - run: pip install -e ".[dev,sevenzip]"
+      - name: ruff check
+        run: ruff check --output-format=github .
+      - name: ruff format --check
+        run: ruff format --check .
+      - name: mypy --strict
+        run: mypy
+      - name: documentation links resolve
+        run: python scripts/check_docs.py
+
+  test:
+    name: test ${{ matrix.os }} py${{ matrix.python }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+        python: ["3.10", "3.11", "3.12", "3.13"]
+        exclude:
+          # Keep the matrix to a sensible size: the middle versions are covered
+          # on Linux, and the edges are what break on the other platforms.
+          - { os: macos-latest, python: "3.11" }
+          - { os: macos-latest, python: "3.12" }
+          - { os: windows-latest, python: "3.11" }
+          - { os: windows-latest, python: "3.12" }
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python }}
+          cache: pip
+      - name: Install Tk (Linux)
+        if: runner.os == 'Linux'
+        run: sudo apt-get update && sudo apt-get install -y python3-tk xvfb
+      - run: pip install -e ".[dev,sevenzip]"
+      - name: Run tests
+        # The GUI tests need a display; xvfb provides one on Linux, and macOS
+        # and Windows runners have one. Tests skip themselves if Tk cannot open.
+        run: |
+          if [ "$RUNNER_OS" = "Linux" ]; then
+            xvfb-run -a python -m pytest -q --cov=fpr --cov=fpr_gui --cov-report=xml
+          else
+            python -m pytest -q --cov=fpr --cov=fpr_gui --cov-report=xml
+          fi
+        shell: bash
+      - name: Upload coverage
+        if: matrix.os == 'ubuntu-latest' && matrix.python == '3.12'
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage
+          path: coverage.xml
+
+  no-extras:
+    name: default install has no optional extra
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - name: Install without the sevenzip extra
+        run: pip install -e ".[dev]"
+      - name: py7zr must be absent
+        run: |
+          if python -c "import py7zr" 2>/dev/null; then
+            echo "py7zr is installed by the default extra set; it must stay optional (ADR-0006)" >&2
+            exit 1
+          fi
+      - name: The tool still works, and 7z tests skip themselves
+        run: |
+          python -m pytest -q -m "not slow"
+          python -m fpr.cli.main formats
+
+  slow:
+    name: performance tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - run: pip install -e ".[dev,sevenzip]"
+      - run: python -m pytest -q -m slow
+
+  package:
+    name: build and verify the wheel
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - run: pip install build twine
+      - run: python -m build
+      - name: twine check
+        run: twine check dist/*
+      - name: install into a clean environment and run it
+        run: bash scripts/verify_install.sh
+      - uses: actions/upload-artifact@v4
+        with:
+          name: dist
+          path: dist/*
