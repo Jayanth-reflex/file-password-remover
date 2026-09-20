@@ -61,13 +61,20 @@ PYEOF
 "$EXE" inspect "$TMP/sample.pdf"
 "$EXE" remove "$TMP/sample.pdf" --password-file "$TMP/pw.txt"
 test -f "$TMP/sample-unprotected.pdf" || { echo "bundle failed to write output" >&2; exit 1; }
-PYTHONPATH=src "$PY" -c "
-import pikepdf, sys
-with pikepdf.open('$TMP/sample-unprotected.pdf') as pdf:
-    assert not pdf.is_encrypted, 'bundle produced an encrypted file'
-    assert len(pdf.pages) == 3, 'bundle lost pages'
-print('bundle output verified independently: 3 pages, not encrypted')
-"
+# The path goes through argv, not through the source text. Under Git Bash on
+# Windows, MSYS rewrites POSIX paths in *arguments* to native ones before
+# handing them to a Windows binary, but leaves the inside of a -c string alone,
+# so an interpolated "$TMP/..." reaches Python as an unusable /tmp/... path.
+PYTHONPATH=src "$PY" - "$TMP/sample-unprotected.pdf" <<'PYEOF'
+import sys
+
+import pikepdf
+
+with pikepdf.open(sys.argv[1]) as pdf:
+    assert not pdf.is_encrypted, "bundle produced an encrypted file"
+    assert len(pdf.pages) == 3, f"bundle lost pages: {len(pdf.pages)}"
+print("bundle output verified independently: 3 pages, not encrypted")
+PYEOF
 
 echo
 echo "==> bundle at $BUNDLE"
