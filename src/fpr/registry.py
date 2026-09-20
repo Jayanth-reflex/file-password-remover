@@ -112,11 +112,17 @@ def known_formats() -> list[dict[str, str]]:
     """Machine-readable summary for ``fpr formats`` and for the GUI."""
     rows: list[dict[str, str]] = []
     for cls in ADAPTERS:
+        # Adapters that cannot add protection inherit the base refusal, so
+        # asking the class is how the boundary stays honest rather than being
+        # a second list to keep in step.
+        can_protect = cls.protect is not Adapter.protect
         rows.append(
             {
                 "id": cls.format_id.value,
                 "name": cls.format_name,
                 "extensions": " ".join(cls.extensions),
+                "can_remove": "yes",
+                "can_protect": "yes" if can_protect else "no",
             }
         )
     return rows

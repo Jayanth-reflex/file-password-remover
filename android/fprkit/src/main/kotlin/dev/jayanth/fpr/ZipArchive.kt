@@ -2,6 +2,7 @@ package dev.jayanth.fpr
 
 import java.io.ByteArrayOutputStream
 import java.util.zip.CRC32
+import java.util.zip.Deflater
 import java.util.zip.Inflater
 
 /** WinZip AE-x parameters, from the 0x9901 extra field. */
@@ -72,6 +73,14 @@ data class DecryptedEntry(
     val plaintextSize: Int,
     val crc: Long,
     val method: Int,
+)
+
+/** An entry rewritten with encryption, ready to be assembled into an archive. */
+data class ProtectedEntry(
+    val entry: ZipEntry,
+    val payload: ByteArray,
+    val plaintextSize: Int,
+    val isDirectory: Boolean,
 )
 
 object ZipArchive {
@@ -301,6 +310,83 @@ object ZipArchive {
             kept.u16(headerId); kept.u16(payload.size); kept.write(payload)
         }
         return kept.toByteArray()
+    }
+
+    fun deflate(input: ByteArray): ByteArray {
+        if (input.isEmpty()) return ByteArray(0)
+        val deflater = Deflater(Deflater.BEST_COMPRESSION, true)
+        return try {
+            deflater.setInput(input)
+            deflater.finish()
+            val output = ByteArrayOutputStream(input.size)
+            val buffer = ByteArray(1 shl 16)
+            while (!deflater.finished()) {
+                output.write(buffer, 0, deflater.deflate(buffer))
+            }
+            output.toByteArray()
+        } finally {
+            deflater.end()
+        }
+    }
+
+    /**
+     * Assemble an archive whose entries are WinZip AES-256.
+     *
+     * The stored compression method becomes 99 ("see the AES extra field") and
+     * the real method moves into that field. The CRC is written as zero: AE-2
+     * leaves integrity to the authentication code, and a CRC would hand anyone
+     * without the password a check on the plaintext.
+     */
+    fun writeProtected(entries: List<ProtectedEntry>): ByteArray {
+        val output = ByteArrayOutputStream()
+        val central = ByteArrayOutputStream()
+        var offset = 0
+
+        for (item in entries) {
+            val name = item.entry.name.toByteArray(Charsets.UTF_8)
+            val extra = if (item.isDirectory) ByteArray(0) else aesExtraField(8)
+            val flags = if (item.isDirectory) 0 else 0x1
+            val method = if (item.isDirectory) 0 else 99
+
+            val local = ByteArrayOutputStream()
+            local.u32(LOCAL_SIGNATURE); local.u16(20); local.u16(flags); local.u16(method)
+            local.u16(item.entry.modTime); local.u16(item.entry.modDate)
+            local.u32(0); local.u32(item.payload.size.toLong())
+            local.u32(item.plaintextSize.toLong()); local.u16(name.size); local.u16(extra.size)
+            local.write(name); local.write(extra); local.write(item.payload)
+            val localBytes = local.toByteArray()
+
+            central.u32(CENTRAL_SIGNATURE); central.u16(item.entry.versionMadeBy); central.u16(20)
+            central.u16(flags); central.u16(method)
+            central.u16(item.entry.modTime); central.u16(item.entry.modDate)
+            central.u32(0); central.u32(item.payload.size.toLong())
+            central.u32(item.plaintextSize.toLong()); central.u16(name.size); central.u16(extra.size)
+            central.u16(0); central.u16(0)
+            central.u16(item.entry.internalAttributes); central.u32(item.entry.externalAttributes)
+            central.u32(offset.toLong())
+            central.write(name); central.write(extra)
+
+            output.write(localBytes)
+            offset += localBytes.size
+        }
+
+        val centralBytes = central.toByteArray()
+        output.write(centralBytes)
+        output.u32(EOCD_SIGNATURE); output.u16(0); output.u16(0)
+        output.u16(entries.size); output.u16(entries.size)
+        output.u32(centralBytes.size.toLong()); output.u32(offset.toLong()); output.u16(0)
+        return output.toByteArray()
+    }
+
+    private fun aesExtraField(actualMethod: Int): ByteArray {
+        val field = ByteArrayOutputStream()
+        field.u16(0x9901)
+        field.u16(7)
+        field.u16(2)                      // AE-2
+        field.write("AE".toByteArray(Charsets.US_ASCII))
+        field.write(3)                    // 3 = AES-256
+        field.u16(actualMethod)
+        return field.toByteArray()
     }
 
     fun crc32(data: ByteArray): Long = CRC32().apply { update(data) }.value

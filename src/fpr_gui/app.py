@@ -36,14 +36,58 @@ from pathlib import Path
 from tkinter import filedialog, messagebox, ttk
 from typing import Any
 
-from fpr import RemovalOptions, Secret, __version__, inspect, plan_output_path, remove
+from fpr import (
+    ProtectOptions,
+    ProtectResult,
+    RemovalOptions,
+    Secret,
+    __version__,
+    inspect,
+    passwords,
+    plan_output_path,
+    protect,
+    remove,
+)
 from fpr.errors import FprError
 from fpr.i18n import t
-from fpr.types import Detection, Removability, RemovalResult
+from fpr.types import Detection, FormatId, Protection, Removability, RemovalResult
+from fpr_gui import theme
 
 __all__ = ["main", "App"]
 
 PAD = 12
+
+# Captions are set in small caps with wide tracking. Tk cannot letter-space, so
+# the spacing is inserted between characters instead; a thin space keeps it
+# subtle and, unlike a normal space, does not read as separate words to a
+# screen reader.
+_TRACKING = "\u2009"
+
+# Shorter captions for the hallmark row, matching the CLI renderer so the two
+# interfaces name the same evidence the same way.
+_MARK_CAPTIONS = {
+    "content_digest": "digest",
+    "content_scope": "scope",
+    "docinfo_keys": "docinfo",
+    "has_xmp": "xmp",
+    "opens_with_password": "opens",
+}
+
+
+def _caption(text: str) -> str:
+    """Upper case with tracking, for section markers and hallmark captions."""
+    return _TRACKING.join(text.upper())
+
+
+class _Rows:
+    """Hands out grid row numbers, so inserting a section cannot renumber the rest."""
+
+    def __init__(self) -> None:
+        self._row = -1
+
+    def next(self) -> int:
+        self._row += 1
+        return self._row
 
 
 @dataclass
@@ -60,6 +104,7 @@ class App:
         self.queue: queue.Queue[_Message] = queue.Queue()
         self.source: Path | None = None
         self.detection: Detection | None = None
+        self._generated: str | None = None
         self.output: Path | None = None
         self.busy = False
         self._poll_job: str | None = None
@@ -71,73 +116,114 @@ class App:
 
     # ------------------------------------------------------------------ UI
     def _build(self) -> None:
-        style = ttk.Style()
-        if "aqua" in style.theme_names() and sys.platform == "darwin":
-            style.theme_use("aqua")
+        self.palette, self.fonts = theme.apply(self.root)
+        self._set_window_icon()
 
-        outer = ttk.Frame(self.root, padding=PAD)
+        outer = ttk.Frame(self.root, padding=(PAD * 2, PAD * 2))
         outer.grid(row=0, column=0, sticky="nsew")
         self.root.columnconfigure(0, weight=1)
         self.root.rowconfigure(0, weight=1)
         outer.columnconfigure(0, weight=1)
+        row = _Rows()
 
-        heading = ttk.Label(
-            outer, text=t("gui.title", "File Password Remover"), font=("TkDefaultFont", 16, "bold")
+        # ---- masthead
+        ttk.Label(outer, text=_caption(t("gui.eyebrow", "Local only")), style="Brass.TLabel").grid(
+            row=row.next(), column=0, sticky="w"
         )
-        heading.grid(row=0, column=0, sticky="w")
+        ttk.Label(outer, text=t("gui.title", "File Password Remover"), style="Display.TLabel").grid(
+            row=row.next(), column=0, sticky="w", pady=(4, 0)
+        )
         ttk.Label(
             outer,
             text=t(
                 "gui.subtitle",
-                "Remove protection from a file you have the password for. "
+                "Lock a file, or open one you have the password for. "
                 "Everything happens on this computer.",
             ),
             wraplength=560,
             justify="left",
-        ).grid(row=1, column=0, sticky="w", pady=(2, PAD))
+            style="Muted.TLabel",
+        ).grid(row=row.next(), column=0, sticky="w", pady=(6, PAD * 2))
 
-        # ---- file picker
-        filebox = ttk.LabelFrame(outer, text="1. " + t("gui.choose", "Choose file…"), padding=PAD)
-        filebox.grid(row=2, column=0, sticky="ew")
+        # ---- source
+        #
+        # The sections are no longer numbered. Numbering should carry real
+        # sequence information, and here the enabled/disabled state and the
+        # detail card already say what can be done next -- so the numerals were
+        # decoration standing in for hierarchy that type and spacing now do.
+        self._section(outer, row.next(), t("gui.source", "Source"))
+        filebox = ttk.Frame(outer)
+        filebox.grid(row=row.next(), column=0, sticky="ew")
         filebox.columnconfigure(1, weight=1)
         self.choose_button = ttk.Button(
             filebox, text=t("gui.choose", "Choose file…"), command=self.on_choose
         )
         self.choose_button.grid(row=0, column=0, sticky="w")
         self.file_label = ttk.Label(
-            filebox, text=t("gui.file.none", "No file chosen."), wraplength=380, justify="left"
+            filebox,
+            text=t("gui.file.none", "No file chosen."),
+            wraplength=380,
+            justify="left",
+            style="Muted.TLabel",
         )
         self.file_label.grid(row=0, column=1, sticky="w", padx=(PAD, 0))
 
+        card = ttk.Frame(outer, style="Card.TFrame", padding=PAD)
+        card.grid(row=row.next(), column=0, sticky="ew", pady=(PAD, 0))
+        card.columnconfigure(0, weight=1)
         self.detail = tk.Text(
-            filebox, height=5, wrap="word", borderwidth=0, highlightthickness=0, takefocus=True
+            card,
+            height=5,
+            wrap="word",
+            borderwidth=0,
+            highlightthickness=0,
+            takefocus=True,
+            background=self.palette.surface,
+            foreground=self.palette.platinum,
+            font=self.fonts["mono"],
+            insertbackground=self.palette.brass,
+            selectbackground=self.palette.line,
         )
-        self.detail.grid(row=1, column=0, columnspan=2, sticky="ew", pady=(PAD, 0))
-        self.detail.configure(state="disabled", background=self.root.cget("background"))
+        self.detail.grid(row=0, column=0, sticky="ew")
+        self.detail.configure(state="disabled")
 
         # ---- password
-        pwbox = ttk.LabelFrame(outer, text="2. " + t("gui.password", "Password"), padding=PAD)
-        pwbox.grid(row=3, column=0, sticky="ew", pady=(PAD, 0))
-        pwbox.columnconfigure(1, weight=1)
-        ttk.Label(pwbox, text=t("gui.password", "Password") + ":").grid(row=0, column=0, sticky="w")
+        self._section(outer, row.next(), t("gui.password", "Password"), top=PAD * 2)
+        pwbox = ttk.Frame(outer)
+        pwbox.grid(row=row.next(), column=0, sticky="ew")
+        pwbox.columnconfigure(0, weight=1)
         self.password_var = tk.StringVar()
-        self.password_entry = ttk.Entry(pwbox, textvariable=self.password_var, show="•")
-        self.password_entry.grid(row=0, column=1, sticky="ew", padx=(PAD, 0))
+        self.password_entry = ttk.Entry(
+            pwbox, textvariable=self.password_var, show="•", font=self.fonts["mono"]
+        )
+        self.password_entry.grid(row=0, column=0, sticky="ew")
         self.show_var = tk.BooleanVar(value=False)
         ttk.Checkbutton(
             pwbox,
             text=t("gui.password.show", "Show password"),
             variable=self.show_var,
             command=self._toggle_password,
-        ).grid(row=1, column=1, sticky="w", padx=(PAD, 0), pady=(6, 0))
+        ).grid(row=0, column=1, sticky="w", padx=(PAD, 0))
 
-        # ---- output
-        outbox = ttk.LabelFrame(
-            outer, text="3. " + t("gui.output", "Save the unprotected copy to"), padding=PAD
+        # Only meaningful when adding a password, so it is hidden otherwise.
+        self.generate_var = tk.BooleanVar(value=True)
+        generate_check = ttk.Checkbutton(
+            pwbox,
+            text=t("gui.generate", "Generate a strong password for me"),
+            variable=self.generate_var,
+            command=self._toggle_password,
         )
-        outbox.grid(row=4, column=0, sticky="ew", pady=(PAD, 0))
+        generate_check.grid(row=1, column=0, columnspan=2, sticky="w", pady=(6, 0))
+        self._protect_only = [generate_check]
+
+        # ---- destination
+        self._section(outer, row.next(), t("gui.output", "Destination"), top=PAD * 2)
+        outbox = ttk.Frame(outer)
+        outbox.grid(row=row.next(), column=0, sticky="ew")
         outbox.columnconfigure(0, weight=1)
-        self.output_label = ttk.Label(outbox, text="—", wraplength=420, justify="left")
+        self.output_label = ttk.Label(
+            outbox, text="—", wraplength=420, justify="left", style="Mark.TLabel"
+        )
         self.output_label.grid(row=0, column=0, sticky="w")
         ttk.Button(
             outbox, text=t("gui.output.choose", "Change…"), command=self.on_choose_output
@@ -147,7 +233,7 @@ class App:
             outbox,
             text=t("gui.overwrite", "Replace the file if it already exists"),
             variable=self.overwrite_var,
-        ).grid(row=1, column=0, columnspan=2, sticky="w", pady=(6, 0))
+        ).grid(row=1, column=0, columnspan=2, sticky="w", pady=(PAD, 0))
         self.restrictions_var = tk.BooleanVar(value=False)
         self.restrictions_check = ttk.Checkbutton(
             outbox,
@@ -158,34 +244,63 @@ class App:
             variable=self.restrictions_var,
             state="disabled",
         )
-        self.restrictions_check.grid(row=2, column=0, columnspan=2, sticky="w", pady=(6, 0))
+        self.restrictions_check.grid(row=2, column=0, columnspan=2, sticky="w", pady=(4, 0))
+        self._remove_only = [self.restrictions_check]
 
         # ---- action
+        ttk.Frame(outer, style="Hairline.TFrame", height=1).grid(
+            row=row.next(), column=0, sticky="ew", pady=(PAD * 2, PAD)
+        )
         actions = ttk.Frame(outer)
-        actions.grid(row=5, column=0, sticky="ew", pady=(PAD, 0))
+        actions.grid(row=row.next(), column=0, sticky="ew")
         actions.columnconfigure(0, weight=1)
         self.progress = ttk.Progressbar(actions, mode="indeterminate")
         self.progress.grid(row=0, column=0, sticky="ew", padx=(0, PAD))
-        self.run_button = ttk.Button(
-            actions,
-            text=t("gui.remove", "Remove protection"),
-            command=self.on_run,
-            default="active",
-        )
-        self.run_button.grid(row=0, column=1, sticky="e")
         self.reveal_button = ttk.Button(
             actions,
             text=t("gui.reveal", "Show in folder"),
             command=self.on_reveal,
             state="disabled",
         )
-        self.reveal_button.grid(row=0, column=2, sticky="e", padx=(6, 0))
+        self.reveal_button.grid(row=0, column=1, sticky="e", padx=(0, 6))
+        self.run_button = ttk.Button(
+            actions,
+            text=t("gui.remove", "Remove protection"),
+            command=self.on_run,
+            default="active",
+            style="Primary.TButton",
+        )
+        self.run_button.grid(row=0, column=2, sticky="e")
 
         # ---- status line (a single element, rewritten in place)
         self.status = ttk.Label(
             outer, text=t("gui.status.ready", "Ready."), wraplength=560, justify="left"
         )
-        self.status.grid(row=6, column=0, sticky="w", pady=(PAD, 0))
+        self.status.grid(row=row.next(), column=0, sticky="w", pady=(PAD, 0))
+
+        # ---- hallmark: the verification evidence, populated only on success
+        self.hallmark = ttk.Frame(outer)
+        self.hallmark.grid(row=row.next(), column=0, sticky="ew")
+
+        # ---- a generated password, shown once and never stored
+        self.generated_hint = ttk.Frame(outer)
+        self.generated_hint.grid(row=row.next(), column=0, sticky="ew", pady=(PAD, 0))
+        ttk.Label(
+            self.generated_hint, text=_caption(t("gui.password", "Password")), style="Brass.TLabel"
+        ).grid(row=0, column=0, sticky="w")
+        self.generated_label = ttk.Label(self.generated_hint, text="", style="Mark.TLabel")
+        self.generated_label.grid(row=1, column=0, sticky="w", pady=(2, 0))
+        ttk.Label(
+            self.generated_hint,
+            text=t(
+                "gui.generated.warning",
+                "Save this now. It is shown once, and this tool cannot recover it.",
+            ),
+            style="Brass.TLabel",
+            wraplength=520,
+            justify="left",
+        ).grid(row=2, column=0, sticky="w", pady=(4, 0))
+        self.generated_hint.grid_remove()
 
         ttk.Label(
             outer,
@@ -195,12 +310,102 @@ class App:
                 "Licensed under Apache-2.0.",
                 version=__version__,
             ),
-            foreground="#666666",
-        ).grid(row=7, column=0, sticky="w", pady=(PAD, 0))
+            style="Caption.TLabel",
+        ).grid(row=row.next(), column=0, sticky="w", pady=(PAD * 2, 0))
 
         self.root.bind("<Return>", lambda _event: self.on_run())
         self.root.bind("<Escape>", lambda _event: self.root.focus_set())
         self.choose_button.focus_set()
+
+    def _section(self, parent: ttk.Frame, row: int, label: str, *, top: int = 0) -> None:
+        """A tracked caption over a hairline: the section marker."""
+        holder = ttk.Frame(parent)
+        holder.grid(row=row, column=0, sticky="ew", pady=(top, 6))
+        holder.columnconfigure(1, weight=1)
+        ttk.Label(holder, text=_caption(label), style="Caption.TLabel").grid(
+            row=0, column=0, sticky="w"
+        )
+        ttk.Frame(holder, style="Hairline.TFrame", height=1).grid(
+            row=0, column=1, sticky="ew", padx=(PAD, 0), pady=(7, 0)
+        )
+
+    def _set_window_icon(self) -> None:
+        """Use the application mark for the window and dock icon."""
+        icon = Path(__file__).resolve().parent / "assets" / "icon-256.png"
+        if not icon.is_file():  # pragma: no cover - absent in a source checkout
+            return
+        with contextlib.suppress(tk.TclError):
+            self._icon_image = tk.PhotoImage(file=str(icon))
+            self.root.iconphoto(True, self._icon_image)
+
+    def show_hallmark(self, marks: dict[str, str]) -> None:
+        """Render the verification evidence as a row of struck marks.
+
+        The signature element of the interface (docs/design/design-system.md).
+        It is only ever called with data the engine returned from re-reading the
+        file it wrote, and it is cleared the moment anything else happens.
+        """
+        for child in self.hallmark.winfo_children():
+            child.destroy()
+        if not marks:
+            return
+
+        ttk.Frame(self.hallmark, style="Hairline.TFrame", height=1).grid(
+            row=0, column=0, columnspan=max(len(marks), 1), sticky="ew", pady=(PAD, PAD)
+        )
+        for column, (key, value) in enumerate(marks.items()):
+            self.hallmark.columnconfigure(column, weight=1)
+            ttk.Label(
+                self.hallmark,
+                text=_caption(_MARK_CAPTIONS.get(key, key)),
+                style="Brass.TLabel",
+            ).grid(row=1, column=column, sticky="w", padx=(0, PAD))
+            ttk.Label(self.hallmark, text=value, style="Mark.TLabel").grid(
+                row=2, column=column, sticky="w", padx=(0, PAD), pady=(2, 0)
+            )
+
+    @property
+    def available(self) -> str:
+        """What can be done with the loaded file: remove, protect, or nothing.
+
+        Removing and protecting are the same gesture in opposite directions, so
+        the file itself decides which one is on offer rather than the user
+        picking a mode first.
+        """
+        if self.detection is None:
+            return "nothing"
+        if self.detection.removability is Removability.REMOVABLE:
+            return "remove"
+        if self.detection.protection is Protection.NONE and self.detection.format_id in (
+            FormatId.PDF,
+            FormatId.ZIP,
+        ):
+            return "protect"
+        return "nothing"
+
+    def _sync_action(self) -> None:
+        """Point the primary button at whichever direction applies."""
+        action = self.available
+        labels = {
+            "remove": t("gui.remove", "Remove protection"),
+            "protect": t("gui.protect", "Protect this file"),
+            "nothing": t("gui.remove", "Remove protection"),
+        }
+        self.run_button.configure(
+            text=labels[action], state="normal" if action != "nothing" else "disabled"
+        )
+        # The generate option only makes sense when setting a new password.
+        for widget in self._protect_only:
+            if action == "protect":
+                widget.grid()
+            else:
+                widget.grid_remove()
+        for widget in self._remove_only:
+            if action == "protect":
+                widget.grid_remove()
+            else:
+                widget.grid()
+        self._toggle_password()
 
     def _toggle_password(self) -> None:
         self.password_entry.configure(show="" if self.show_var.get() else "•")
@@ -233,6 +438,10 @@ class App:
         self.file_label.configure(text=str(path))
         self.output = None
         self.reveal_button.grid_remove()
+        # Evidence belongs to one run; it must never sit under a different file.
+        self.show_hallmark({})
+        self.generated_label.configure(text="")
+        self.generated_hint.grid_remove()
         self._set_detail(t("gui.inspecting", "Inspecting…"))
         self._run_async(lambda: inspect(path), "detection")
 
@@ -267,7 +476,9 @@ class App:
                 t("gui.title", "File Password Remover"), t("gui.nofile", "Choose a file first.")
             )
             return
-        if not self.password_var.get():
+        protecting = self.available == "protect"
+        generating = protecting and bool(self.generate_var.get())
+        if not generating and not self.password_var.get():
             messagebox.showinfo(
                 t("gui.title", "File Password Remover"),
                 t("gui.password.empty", "Enter the file's password first."),
@@ -276,6 +487,10 @@ class App:
             return
 
         source = self.source
+        if protecting:
+            self._run_protect(source, generating)
+            return
+
         options = self._options()
         # Take the password out of the Tk variable immediately: a StringVar
         # lives as long as the widget, and we do not want it to.
@@ -290,6 +505,52 @@ class App:
 
         self._set_status(t("gui.working", "Working…"))
         self._run_async(work, "result")
+
+    def _run_protect(self, source: Path, generating: bool) -> None:
+        """Write a protected copy, and surface a generated password once."""
+        options = ProtectOptions(overwrite=self.overwrite_var.get())
+        secret = passwords.generate() if generating else Secret.from_text(self.password_var.get())
+        self.password_var.set("")
+        # Only shown when this tool made it: a password the user typed is
+        # already theirs, and echoing it would only put it somewhere new.
+        self._generated = None
+        if generating:
+            with secret.expose() as text:
+                self._generated = text
+
+        def work() -> ProtectResult:
+            try:
+                return protect(source, secret, options)
+            finally:
+                secret.close()
+
+        self._set_status(t("gui.working", "Working…"))
+        self._run_async(work, "protected")
+
+    def show_protected(self, result: ProtectResult) -> None:
+        self.output = result.output
+        self._set_status(
+            "\n".join(
+                [
+                    t(
+                        "gui.status.protected",
+                        "Done. Verified protected copy written to {path}.",
+                        path=str(result.output),
+                    ),
+                    t("gui.status.original", "The original file was not changed."),
+                ]
+            )
+        )
+        self.show_hallmark(dict(result.verification))
+        self.reveal_button.grid()
+        if self._generated is not None:
+            self.generated_label.configure(text=self._generated)
+            self.generated_hint.grid()
+            # Held only until the next action; never written anywhere.
+            self._generated = None
+        else:
+            self.generated_label.configure(text="")
+            self.generated_hint.grid_remove()
 
     def on_reveal(self) -> None:
         if self.output is None:
@@ -337,19 +598,24 @@ class App:
     def _handle(self, message: _Message) -> None:
         self.busy = False
         self.progress.stop()
-        self.run_button.configure(state="normal")
         self.choose_button.configure(state="normal")
+        # The primary button's label and state depend on the file, so the
+        # action decides rather than a blanket re-enable.
+        self._sync_action()
 
         if message.kind == "detection":
             self.show_detection(message.payload)
         elif message.kind == "result":
             self.show_result(message.payload)
+        elif message.kind == "protected":
+            self.show_protected(message.payload)
         elif message.kind == "error":
             self.show_error(message.payload)
 
     # -------------------------------------------------------------- display
     def show_detection(self, detection: Detection) -> None:
         self.detection = detection
+        self._sync_action()
         lines = [
             f"{t('gui.format', 'Format')}: {detection.format_name}",
             f"{t('gui.protection', 'Protection')}: {detection.protection.value}",
@@ -374,21 +640,23 @@ class App:
 
     def show_result(self, result: RemovalResult) -> None:
         self.output = result.output
-        proof = ", ".join(f"{k}={v}" for k, v in result.verification.items())
         lines = [
             t(
                 "gui.status.ok",
                 "Done. Verified unprotected copy written to {path}.",
                 path=str(result.output),
             ),
-            t("gui.status.verified", "Verified: {proof}", proof=proof),
             t("gui.status.original", "The original file was not changed."),
         ]
         lines.extend(f"! {w}" for w in result.warnings)
         self._set_status("\n".join(lines))
+        # The evidence goes in the hallmark row rather than the status sentence,
+        # where it was previously a comma-separated tail nobody read.
+        self.show_hallmark(dict(result.verification))
         self.reveal_button.grid()
 
     def show_error(self, exc: BaseException) -> None:
+        self.show_hallmark({})
         if isinstance(exc, FprError):
             body = exc.message + (f"\n\n{exc.remediation}" if exc.remediation else "")
         else:  # pragma: no cover - defensive

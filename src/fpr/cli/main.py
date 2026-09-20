@@ -12,16 +12,26 @@ docs/ops/cli.md. Anything other than 0 means nothing was written.
 from __future__ import annotations
 
 import argparse
+import os
 import sys
 from pathlib import Path
 
-from .. import __version__
+from .. import __version__, passwords
 from ..batch import collect_inputs, run_batch
-from ..engine import DEFAULT_SUFFIX, RemovalOptions, inspect, remove
+from ..engine import (
+    DEFAULT_SUFFIX,
+    PROTECTED_SUFFIX,
+    ProtectOptions,
+    RemovalOptions,
+    inspect,
+    protect,
+    remove,
+)
 from ..errors import ExitCode, FprError, UsageError
 from ..logging_setup import configure
 from ..policy import POLICY_RULES
 from ..registry import UNSUPPORTED_BY_DESIGN, known_formats
+from ..secret import Secret
 from .output import Renderer
 from .password_input import add_password_arguments, resolve_secret
 
@@ -131,6 +141,50 @@ def build_parser() -> argparse.ArgumentParser:
     )
     add_password_arguments(p_remove)
 
+    p_protect = sub.add_parser(
+        "protect",
+        help="Write a verified, password-protected copy.",
+        description=(
+            "Encrypt a file with a password you supply or one generated for you, and write "
+            "a protected copy. The original is never modified, and there is no --in-place: "
+            "if the only copy of the password were lost, the file would be unrecoverable, "
+            "and this tool refuses to crack it back open."
+        ),
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog=_EPILOG,
+    )
+    p_protect.add_argument("paths", nargs="+", type=Path, metavar="FILE")
+    pout = p_protect.add_argument_group("output")
+    pout.add_argument("-o", "--output", type=Path, help="Exact output path (single input only).")
+    pout.add_argument("--output-dir", type=Path, help="Directory for the protected copies.")
+    pout.add_argument(
+        "--suffix",
+        default=PROTECTED_SUFFIX,
+        help=f"Suffix added to the stem of the output name (default: {PROTECTED_SUFFIX}).",
+    )
+    pout.add_argument("--overwrite", action="store_true", help="Replace an existing output file.")
+    pout.add_argument(
+        "--no-preserve-timestamps",
+        dest="preserve_timestamps",
+        action="store_false",
+        help="Do not copy the original's modification time onto the output.",
+    )
+    pw = p_protect.add_argument_group("password")
+    pw.add_argument(
+        "--generate",
+        action="store_true",
+        help="Generate a strong password instead of asking for one. It is printed once: "
+        "this tool cannot recover it later.",
+    )
+    pw.add_argument(
+        "--password-out",
+        type=Path,
+        metavar="FILE",
+        help="Write a generated password to FILE (created 0600) instead of printing it. "
+        "Safer than the terminal, which keeps scrollback.",
+    )
+    add_password_arguments(p_protect)
+
     sub.add_parser(
         "formats",
         help="List supported formats, protections and deliberate exclusions.",
@@ -155,6 +209,8 @@ def main(argv: list[str] | None = None) -> int:
             return _cmd_inspect(args, renderer)
         if args.command == "remove":
             return _cmd_remove(args, renderer)
+        if args.command == "protect":
+            return _cmd_protect(args, renderer)
         if args.command == "formats":
             return _cmd_formats(renderer)
         if args.command == "version":
@@ -249,6 +305,59 @@ def _cmd_remove(args: argparse.Namespace, renderer: Renderer) -> int:
     return int(ExitCode.PARTIAL_FAILURE if report.failed else ExitCode.OK)
 
 
+def _cmd_protect(args: argparse.Namespace, renderer: Renderer) -> int:
+    paths = collect_inputs(args.paths, recursive=False, patterns=[])
+    if not paths:
+        raise UsageError("No input files matched.")
+    if len(paths) > 1:
+        raise UsageError(
+            f"protect takes one file at a time, but {len(paths)} matched.",
+            remediation="Protecting a batch would produce a set of passwords to keep track "
+            "of in one go, which is how people lose them. Run it per file.",
+        )
+    if args.generate and (args.password_stdin or args.password_file or args.password_fd):
+        raise UsageError("--generate cannot be combined with a supplied password.")
+
+    options = ProtectOptions(
+        output=args.output,
+        output_dir=args.output_dir,
+        suffix=args.suffix,
+        overwrite=args.overwrite,
+        preserve_timestamps=args.preserve_timestamps,
+    )
+    if options.output_dir is not None:
+        options.output_dir.mkdir(parents=True, exist_ok=True)
+
+    if args.generate:
+        secret = passwords.generate()
+    else:
+        # confirm=True makes the user type it twice: a typo here is not
+        # recoverable, because the file will only open with what was typed.
+        secret = resolve_secret(args, confirm=True)
+
+    with secret:
+        result = protect(paths[0], secret, options)
+        # The password is surfaced *after* the file exists, so a crash between
+        # the two cannot leave a locked file whose password was never shown.
+        written_to: Path | None = None
+        if args.generate and args.password_out is not None:
+            written_to = _write_password(args.password_out, secret)
+        renderer.protected(
+            result,
+            generated=secret if args.generate and written_to is None else None,
+            password_file=written_to,
+        )
+    return int(ExitCode.OK)
+
+
+def _write_password(path: Path, secret: Secret) -> Path:
+    """Write a generated password to a file only its owner can read."""
+    handle = os.open(path, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600)
+    with os.fdopen(handle, "w", encoding="utf-8") as stream, secret.expose() as text:
+        stream.write(text + "\n")
+    return path
+
+
 def _cmd_formats(renderer: Renderer) -> int:
     rows = known_formats()
     if renderer.as_json:
@@ -264,7 +373,11 @@ def _cmd_formats(renderer: Renderer) -> int:
         return int(ExitCode.OK)
     renderer.line("Supported formats")
     for row in rows:
-        renderer.line(f"  {row['id']:<14} {row['name']}")
+        # Say which direction each format works in: removing protection is
+        # supported everywhere, adding it is not, and guessing wrong about that
+        # is how someone ends up with an unencrypted copy they thought was safe.
+        directions = "remove" + (" + protect" if row["can_protect"] == "yes" else "")
+        renderer.line(f"  {row['id']:<14} {row['name']}  ({directions})")
         renderer.line(f"  {'':<14} {row['extensions']}")
     renderer.line()
     renderer.line("Not supported, by design")

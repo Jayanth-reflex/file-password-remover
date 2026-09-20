@@ -1,0 +1,190 @@
+#!/usr/bin/env python3
+"""Generate the application mark and every icon size from one definition.
+
+The mark is a **hallmark punch**: a brass cartouche with a check struck out of
+it, down to the ground. Hallmarks are the small punched marks that certify
+precious metal, which is the idea the whole interface is built on -- this tool's
+distinguishing behaviour is that it re-reads its own output and verifies it
+before reporting success. See docs/design/design-system.md.
+
+Everything is drawn here rather than committed as binaries, for the same reason
+the test fixtures are generated: a reviewer can see exactly what produces the
+artwork, and the repository stays free of opaque blobs.
+
+    python3 scripts/gen_icon.py
+"""
+
+from __future__ import annotations
+
+from pathlib import Path
+
+from PIL import Image, ImageDraw
+
+ROOT = Path(__file__).resolve().parent.parent
+ICONS = ROOT / "assets" / "icon"
+
+# docs/design/design-system.md
+INK = (18, 20, 23, 255)
+INK_TOP = (30, 33, 38, 255)
+BRASS = (198, 166, 100, 255)
+BRASS_LIT = (222, 196, 140, 255)
+
+# Drawn at 4x and downsampled: Pillow has no anti-aliased primitives.
+SUPERSAMPLE = 4
+
+
+def _punch(size: int) -> list[tuple[float, float]]:
+    """The punch outline: a cut-corner rectangle.
+
+    Assay marks use cut-corner punches for purity and date letters. It reads as
+    struck metal, where a rounded square reads as a checklist app and a shield
+    reads as antivirus.
+    """
+    unit = size / 64
+    return [
+        (19 * unit, 9 * unit),
+        (45 * unit, 9 * unit),
+        (52 * unit, 16 * unit),
+        (52 * unit, 48 * unit),
+        (45 * unit, 55 * unit),
+        (19 * unit, 55 * unit),
+        (12 * unit, 48 * unit),
+        (12 * unit, 16 * unit),
+    ]
+
+
+def _makers_mark(size: int) -> list[tuple[float, float, float, float]]:
+    """The struck glyph: an F, as a maker's mark.
+
+    A maker's mark is a letter struck into a cut-corner punch, and it is the
+    part of a hallmark that says who stands behind the piece. That is the right
+    claim for this tool, and it avoids the padlock-and-shield vocabulary every
+    other security product reaches for.
+
+    Drawn as three rectangles rather than text so it renders identically
+    everywhere, with no font dependency and no hinting differences between
+    platforms.
+    """
+    unit = size / 64
+    return [
+        (23 * unit, 18 * unit, 30 * unit, 46 * unit),  # stem
+        (30 * unit, 18 * unit, 42 * unit, 24.5 * unit),  # upper arm
+        (30 * unit, 29 * unit, 38 * unit, 35.5 * unit),  # middle arm, shorter
+    ]
+
+
+def draw_mark(size: int, *, ground: bool = True, lit: bool = True) -> Image.Image:
+    """Render the mark at *size* pixels.
+
+    ``ground`` draws the graphite field behind the punch; turn it off for the
+    Android adaptive foreground layer, which is composited over its own
+    background layer.
+    """
+    scale = size * SUPERSAMPLE
+    image = Image.new("RGBA", (scale, scale), (0, 0, 0, 0))
+    draw = ImageDraw.Draw(image)
+
+    if ground:
+        # A very shallow vertical lift, so the field reads as metal under light
+        # rather than as flat paint.
+        for row in range(scale):
+            ratio = row / max(scale - 1, 1)
+            draw.line(
+                [(0, row), (scale, row)],
+                fill=tuple(
+                    round(top + (base - top) * ratio)
+                    for top, base in zip(INK_TOP, INK, strict=True)
+                ),
+            )
+
+    draw.polygon(_punch(scale), fill=BRASS_LIT if lit else BRASS)
+
+    # The letter is struck *through* the punch: on the icon it goes down to the
+    # graphite field, and on the transparent foreground layer it cuts a hole.
+    knockout = INK if ground else (0, 0, 0, 0)
+    for left, top, right, bottom in _makers_mark(scale):
+        draw.rectangle((left, top, right, bottom), fill=knockout)
+
+    return image.resize((size, size), Image.LANCZOS)
+
+
+SVG_TEMPLATE = """<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" \
+width="64" height="64" role="img" aria-label="File Password Remover">
+  <title>File Password Remover</title>
+  <!-- A hallmark punch: an F struck into a brass cut-corner cartouche, as a
+       maker's mark.
+       See docs/design/design-system.md. -->
+  <defs>
+    <linearGradient id="field" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#1E2126"/>
+      <stop offset="1" stop-color="#121417"/>
+    </linearGradient>
+    <mask id="struck">
+      <rect width="64" height="64" fill="#000"/>
+      <polygon points="19,9 45,9 52,16 52,48 45,55 19,55 12,48 12,16" fill="#fff"/>
+      <rect x="23" y="18" width="7" height="28" fill="#000"/>
+      <rect x="30" y="18" width="12" height="6.5" fill="#000"/>
+      <rect x="30" y="29" width="8" height="6.5" fill="#000"/>
+    </mask>
+  </defs>
+  <rect width="64" height="64" rx="14" fill="url(#field)"/>
+  <rect width="64" height="64" fill="#DEC48C" mask="url(#struck)"/>
+</svg>
+"""
+
+# iOS wants one 1024 master; the rest are generated by Xcode from it.
+IOS_SIZES = [1024]
+# Android launcher densities, plus the adaptive layers at 432 (108dp @ xxxhdpi).
+ANDROID_LEGACY = {"mdpi": 48, "hdpi": 72, "xhdpi": 96, "xxhdpi": 144, "xxxhdpi": 192}
+ADAPTIVE = 432
+WEB_SIZES = {"favicon-32.png": 32, "apple-touch-icon.png": 180, "icon-512.png": 512}
+
+
+def main() -> int:
+    ICONS.mkdir(parents=True, exist_ok=True)
+    (ICONS / "mark.svg").write_text(SVG_TEMPLATE)
+    written = ["assets/icon/mark.svg"]
+
+    for size in IOS_SIZES:
+        target = ICONS / f"ios-appicon-{size}.png"
+        # App Store artwork must not carry an alpha channel.
+        draw_mark(size).convert("RGB").save(target)
+        written.append(str(target.relative_to(ROOT)))
+
+    for name, size in ANDROID_LEGACY.items():
+        target = ICONS / f"android-{name}.png"
+        draw_mark(size).save(target)
+        written.append(str(target.relative_to(ROOT)))
+
+    # Adaptive layers: the system masks and animates these separately, and both
+    # must survive being cropped to the inner 72dp of 108dp.
+    foreground = Image.new("RGBA", (ADAPTIVE, ADAPTIVE), (0, 0, 0, 0))
+    inner = draw_mark(round(ADAPTIVE * 0.666), ground=False)
+    offset = (ADAPTIVE - inner.width) // 2
+    foreground.paste(inner, (offset, offset), inner)
+    foreground.save(ICONS / "android-adaptive-foreground.png")
+    Image.new("RGBA", (ADAPTIVE, ADAPTIVE), INK).save(ICONS / "android-adaptive-background.png")
+    written += [
+        "assets/icon/android-adaptive-foreground.png",
+        "assets/icon/android-adaptive-background.png",
+    ]
+
+    # The desktop app loads its window icon from inside the package, so it
+    # works from an installed wheel and not only from a source checkout.
+    packaged = ROOT / "src" / "fpr_gui" / "assets"
+    packaged.mkdir(parents=True, exist_ok=True)
+    draw_mark(256).save(packaged / "icon-256.png")
+    written.append("src/fpr_gui/assets/icon-256.png")
+
+    for name, size in WEB_SIZES.items():
+        draw_mark(size).save(ICONS / name)
+        written.append(f"assets/icon/{name}")
+
+    print(f"wrote {len(written)} files:")
+    for path in written:
+        print(f"  {path}")
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

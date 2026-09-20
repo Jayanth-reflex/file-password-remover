@@ -72,11 +72,34 @@ untrusted source should run the tool in a container or a VM. That is a
 mitigation we are asking the user to apply, which is worth stating plainly
 rather than burying.
 
+## Adding protection
+
+`fpr protect` runs the tool in the opposite direction, and it introduces a risk
+class the rest of the tool does not have: software that encrypts a user's files
+and controls the only key is, structurally, what ransomware does. The difference
+has to be built in rather than promised.
+
+| ID | Risk | Control | Status |
+| --- | --- | --- | --- |
+| **R-17** | A file is locked with a key the user never receives | The password is surfaced only *after* the output exists, so a failure between the two cannot produce a locked file with no key; `--json` returns a generated password so an automated caller keeps it too | Mitigated — `tests/integration/test_cli_protect.py` |
+| **R-18** | The original is destroyed along with access to it | There is no in-place mode for `protect`. The output is always a new file and the original is never written to | Mitigated — `test_protect_refuses_to_write_over_its_own_source` |
+| **R-19** | A batch produces more passwords than anyone can keep | `protect` refuses more than one file per run | Mitigated |
+| **R-20** | Two passwords end up nested on one file | Protecting an already-encrypted file is refused; the existing protection must be removed first | Mitigated |
+| **R-21** | A generated password is predictable | `secrets` (Python), `SecRandomCopyBytes` with rejection sampling (Swift), `SecureRandom` (Kotlin); ~99 bits, and anything under 90 is refused | Mitigated — `tests/unit/test_passwords.py` |
+| **R-22** | A generated password sits in terminal scrollback | `--password-out FILE` writes it to a `0600` file instead; on Android the clipboard copy is flagged `IS_SENSITIVE` | **Partly** — printing to a terminal is still the default, because a password nobody sees is worse |
+| **R-23** | The file is encrypted but no longer holds the original content | The output is re-opened *with the password* and its content compared against the source before success is reported. "It is encrypted" alone would be satisfied by an empty encrypted file | Mitigated |
+
+The honest residual: **this tool cannot get you back into a file whose password
+you lost.** That is the same property that makes it safe — it has no cracking
+code — and it is stated wherever a password is generated, not buried here.
+
 ## Explicitly out of scope
 
 - A compromised operating system, kernel or root user (T-7).
 - Hardware attacks: cold boot, DMA, side channels.
 - The user choosing to publish the decrypted output.
+- The user losing a password this tool generated and showed them. There is no
+  recovery path, by design.
 - Whether the user is *entitled* to the file. The tool enforces that they hold
   the password, which is the only thing software can check.
 
@@ -87,7 +110,7 @@ rather than burying.
 | Critical | none |
 | High | none |
 | Medium | R-05 (temp scrubbing on modern storage), R-08 (no parser sandbox) |
-| Low | R-07, R-11, R-12, R-16 |
+| Low | R-07, R-11, R-12, R-16, R-22 |
 
 Every medium item is documented in the README or
 [known-limitations.md](../reports/known-limitations.md) so a user can make

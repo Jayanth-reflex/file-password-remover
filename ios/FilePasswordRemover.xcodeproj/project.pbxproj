@@ -9,15 +9,17 @@
 /* Begin PBXBuildFile section */
 		D7E375EEA90EB4137165AF04 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DF2F3E3A3AA824B0E8E719B7 /* ContentView.swift */; };
 		40D478C5978E1731DA4A3754 /* FilePasswordRemoverApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = C6673CB124E81FE5F69F7039 /* FilePasswordRemoverApp.swift */; };
+		D43CE4A702AA100BA0D08A39 /* Theme.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1B5CDE22DC135ECD1A02154 /* Theme.swift */; };
 		C3D7C2DE68C1581E9EAB915E /* ByteReader.swift in Sources */ = {isa = PBXBuildFile; fileRef = AD42C1AF1A55B77484D4122D /* ByteReader.swift */; };
 		01EDBA9CB621C5CB4952D5E8 /* CFBReader.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0D2C838EF5F8F41495A6A1CB /* CFBReader.swift */; };
 		94EC3A6AF9871B82BCE79BD7 /* Crypto.swift in Sources */ = {isa = PBXBuildFile; fileRef = 96EC45357329CAB55AC9DAED /* Crypto.swift */; };
 		D5DD2505F141C53255798ED8 /* Deflate.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5B05CBBEFFFB0FD275DD5BE /* Deflate.swift */; };
+		C2FCDA318A66D7CC50F5ADFD /* DocumentModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5924422AFF78FD12B65A8050 /* DocumentModel.swift */; };
 		3A4CA355FDBD18235FE598EC /* Engine.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2A4562F4F12B659B3470A01F /* Engine.swift */; };
 		8FA55203B61E904A8EE57368 /* LegacyOfficeAdapter.swift in Sources */ = {isa = PBXBuildFile; fileRef = B4304BC95D98610192865401 /* LegacyOfficeAdapter.swift */; };
 		590E52C057F61689E7637663 /* OOXMLAdapter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 408AAF049D9496970FA7841B /* OOXMLAdapter.swift */; };
 		97D907FDD4652616C53C2D69 /* PDFAdapter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 18A6B2028DB800154A849FD4 /* PDFAdapter.swift */; };
-		E5EB8A2AB1880D0B3E896797 /* RemovalModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = E2D6DB0676A47CD133237649 /* RemovalModel.swift */; };
+		46972519A08799719136D139 /* PasswordGenerator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5828DF1F8953D8F1997C35B1 /* PasswordGenerator.swift */; };
 		5B2C656637B82FA760F17840 /* Types.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3777DE870F88EE4DFF01352D /* Types.swift */; };
 		C7507012FC7836D11820DD1C /* ZipAdapter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7C09103E93B056833103278C /* ZipAdapter.swift */; };
 		F077BF00BCA166993D436133 /* ZipArchive.swift in Sources */ = {isa = PBXBuildFile; fileRef = 634FF72CAE758819A3F8CC6D /* ZipArchive.swift */; };
@@ -27,15 +29,17 @@
 /* Begin PBXFileReference section */
 		DF2F3E3A3AA824B0E8E719B7 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ContentView.swift; path = "App/ContentView.swift"; sourceTree = "<group>"; };
 		C6673CB124E81FE5F69F7039 /* FilePasswordRemoverApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = FilePasswordRemoverApp.swift; path = "App/FilePasswordRemoverApp.swift"; sourceTree = "<group>"; };
+		F1B5CDE22DC135ECD1A02154 /* Theme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = Theme.swift; path = "App/Theme.swift"; sourceTree = "<group>"; };
 		AD42C1AF1A55B77484D4122D /* ByteReader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ByteReader.swift; path = "FprKit/Sources/FprKit/ByteReader.swift"; sourceTree = "<group>"; };
 		0D2C838EF5F8F41495A6A1CB /* CFBReader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = CFBReader.swift; path = "FprKit/Sources/FprKit/CFBReader.swift"; sourceTree = "<group>"; };
 		96EC45357329CAB55AC9DAED /* Crypto.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = Crypto.swift; path = "FprKit/Sources/FprKit/Crypto.swift"; sourceTree = "<group>"; };
 		A5B05CBBEFFFB0FD275DD5BE /* Deflate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = Deflate.swift; path = "FprKit/Sources/FprKit/Deflate.swift"; sourceTree = "<group>"; };
+		5924422AFF78FD12B65A8050 /* DocumentModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = DocumentModel.swift; path = "FprKit/Sources/FprKit/DocumentModel.swift"; sourceTree = "<group>"; };
 		2A4562F4F12B659B3470A01F /* Engine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = Engine.swift; path = "FprKit/Sources/FprKit/Engine.swift"; sourceTree = "<group>"; };
 		B4304BC95D98610192865401 /* LegacyOfficeAdapter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = LegacyOfficeAdapter.swift; path = "FprKit/Sources/FprKit/LegacyOfficeAdapter.swift"; sourceTree = "<group>"; };
 		408AAF049D9496970FA7841B /* OOXMLAdapter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = OOXMLAdapter.swift; path = "FprKit/Sources/FprKit/OOXMLAdapter.swift"; sourceTree = "<group>"; };
 		18A6B2028DB800154A849FD4 /* PDFAdapter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = PDFAdapter.swift; path = "FprKit/Sources/FprKit/PDFAdapter.swift"; sourceTree = "<group>"; };
-		E2D6DB0676A47CD133237649 /* RemovalModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = RemovalModel.swift; path = "FprKit/Sources/FprKit/RemovalModel.swift"; sourceTree = "<group>"; };
+		5828DF1F8953D8F1997C35B1 /* PasswordGenerator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = PasswordGenerator.swift; path = "FprKit/Sources/FprKit/PasswordGenerator.swift"; sourceTree = "<group>"; };
 		3777DE870F88EE4DFF01352D /* Types.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = Types.swift; path = "FprKit/Sources/FprKit/Types.swift"; sourceTree = "<group>"; };
 		7C09103E93B056833103278C /* ZipAdapter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ZipAdapter.swift; path = "FprKit/Sources/FprKit/ZipAdapter.swift"; sourceTree = "<group>"; };
 		634FF72CAE758819A3F8CC6D /* ZipArchive.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ZipArchive.swift; path = "FprKit/Sources/FprKit/ZipArchive.swift"; sourceTree = "<group>"; };
@@ -68,6 +72,7 @@
 			children = (
 				DF2F3E3A3AA824B0E8E719B7 /* ContentView.swift */,
 				C6673CB124E81FE5F69F7039 /* FilePasswordRemoverApp.swift */,
+				F1B5CDE22DC135ECD1A02154 /* Theme.swift */,
 			);
 			name = App;
 			sourceTree = "<group>";
@@ -79,11 +84,12 @@
 				0D2C838EF5F8F41495A6A1CB /* CFBReader.swift */,
 				96EC45357329CAB55AC9DAED /* Crypto.swift */,
 				A5B05CBBEFFFB0FD275DD5BE /* Deflate.swift */,
+				5924422AFF78FD12B65A8050 /* DocumentModel.swift */,
 				2A4562F4F12B659B3470A01F /* Engine.swift */,
 				B4304BC95D98610192865401 /* LegacyOfficeAdapter.swift */,
 				408AAF049D9496970FA7841B /* OOXMLAdapter.swift */,
 				18A6B2028DB800154A849FD4 /* PDFAdapter.swift */,
-				E2D6DB0676A47CD133237649 /* RemovalModel.swift */,
+				5828DF1F8953D8F1997C35B1 /* PasswordGenerator.swift */,
 				3777DE870F88EE4DFF01352D /* Types.swift */,
 				7C09103E93B056833103278C /* ZipAdapter.swift */,
 				634FF72CAE758819A3F8CC6D /* ZipArchive.swift */,
@@ -170,15 +176,17 @@
 			files = (
 				D7E375EEA90EB4137165AF04 /* ContentView.swift in Sources */,
 				40D478C5978E1731DA4A3754 /* FilePasswordRemoverApp.swift in Sources */,
+				D43CE4A702AA100BA0D08A39 /* Theme.swift in Sources */,
 				C3D7C2DE68C1581E9EAB915E /* ByteReader.swift in Sources */,
 				01EDBA9CB621C5CB4952D5E8 /* CFBReader.swift in Sources */,
 				94EC3A6AF9871B82BCE79BD7 /* Crypto.swift in Sources */,
 				D5DD2505F141C53255798ED8 /* Deflate.swift in Sources */,
+				C2FCDA318A66D7CC50F5ADFD /* DocumentModel.swift in Sources */,
 				3A4CA355FDBD18235FE598EC /* Engine.swift in Sources */,
 				8FA55203B61E904A8EE57368 /* LegacyOfficeAdapter.swift in Sources */,
 				590E52C057F61689E7637663 /* OOXMLAdapter.swift in Sources */,
 				97D907FDD4652616C53C2D69 /* PDFAdapter.swift in Sources */,
-				E5EB8A2AB1880D0B3E896797 /* RemovalModel.swift in Sources */,
+				46972519A08799719136D139 /* PasswordGenerator.swift in Sources */,
 				5B2C656637B82FA760F17840 /* Types.swift in Sources */,
 				C7507012FC7836D11820DD1C /* ZipAdapter.swift in Sources */,
 				F077BF00BCA166993D436133 /* ZipArchive.swift in Sources */,

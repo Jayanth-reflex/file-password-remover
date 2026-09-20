@@ -22,3 +22,7 @@ android/build/
 android/*/build/
 android/local.properties
 build/ios-dd/
+build/interop/
+
+# SwiftPM build output
+ios/FprKit/.build/

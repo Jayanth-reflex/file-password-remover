@@ -3,7 +3,9 @@ package dev.jayanth.fpr.app
 import android.content.Context
 import com.tom_roush.pdfbox.android.PDFBoxResourceLoader
 import com.tom_roush.pdfbox.pdmodel.PDDocument
+import com.tom_roush.pdfbox.pdmodel.encryption.AccessPermission
 import com.tom_roush.pdfbox.pdmodel.encryption.InvalidPasswordException
+import com.tom_roush.pdfbox.pdmodel.encryption.StandardProtectionPolicy
 import dev.jayanth.fpr.FprException
 import dev.jayanth.fpr.PdfBackend
 import java.io.ByteArrayOutputStream
@@ -39,6 +41,15 @@ class AndroidPdfBackend(context: Context) : PdfBackend {
 
         override fun saveDecrypted(): ByteArray {
             document.setAllSecurityToBeRemoved(true)
+            return ByteArrayOutputStream().also { document.save(it) }.toByteArray()
+        }
+
+        override fun saveEncrypted(password: String): ByteArray {
+            // The same value as user and owner password: a separate owner
+            // password would be a second credential that also opens the file.
+            val policy = StandardProtectionPolicy(password, password, AccessPermission())
+            policy.encryptionKeyLength = 256
+            document.protect(policy)
             return ByteArrayOutputStream().also { document.save(it) }.toByteArray()
         }
 
