@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>File Password Remover</title>
+<meta name="description" content="Remove password protection from files you own, locally, after you supply the correct password. No uploads, no telemetry, verified output.">
+<meta property="og:title" content="File Password Remover">
+<meta property="og:description" content="Unlock the files you own — on your own machine, with proof the result is intact.">
+<meta property="og:type" content="website">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🔓</text></svg>">
+<style>
+:root{
+  --bg:#fbfbfa; --panel:#fff; --line:#e4e4e1; --ink:#16150f; --dim:#6a685e;
+  --accent:#b4502a; --accent-soft:#fdf3ef; --good:#2f6b46; --mono:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,monospace;
+  --code-bg:#1c1b17; --code-ink:#e9e7df;
+}
+:root:not([data-theme="light"]){
+  @media (prefers-color-scheme:dark){
+    --bg:#131210; --panel:#1b1a17; --line:#302e29; --ink:#ecebe5; --dim:#9b988d;
+    --accent:#e0824f; --accent-soft:#2a1f18; --good:#6fbf8e; --code-bg:#0e0d0b; --code-ink:#e9e7df;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#131210; --panel:#1b1a17; --line:#302e29; --ink:#ecebe5; --dim:#9b988d;
+  --accent:#e0824f; --accent-soft:#2a1f18; --good:#6fbf8e; --code-bg:#0e0d0b; --code-ink:#e9e7df;
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{
+  margin:0; background:var(--bg); color:var(--ink);
+  font:16px/1.65 ui-sans-serif,system-ui,-apple-system,"Segoe UI",Inter,Helvetica,Arial,sans-serif;
+  -webkit-font-smoothing:antialiased;
+}
+.wrap{max-width:960px;margin:0 auto;padding:0 16px}
+a{color:var(--accent)}
+code{font-family:var(--mono);font-size:.9em}
+h1,h2,h3{line-height:1.2;letter-spacing:-.02em}
+h2{font-size:1.5rem;margin:0 0 .2rem}
+.sec{padding:56px 0;border-top:1px solid var(--line)}
+.sub{color:var(--dim);margin:0 0 28px;font-size:.98rem}
+
+/* hero */
+header{padding:76px 0 60px;text-align:center}
+.eyebrow{
+  display:inline-block;font-family:var(--mono);font-size:.72rem;letter-spacing:.14em;
+  text-transform:uppercase;color:var(--accent);background:var(--accent-soft);
+  border:1px solid var(--line);border-radius:100px;padding:5px 13px;margin-bottom:22px;
+}
+h1{font-size:clamp(2.1rem,6vw,3.4rem);margin:0 0 14px;font-weight:680}
+.tagline{font-size:clamp(1.02rem,2.6vw,1.24rem);color:var(--dim);max-width:34ch;margin:0 auto 30px}
+.badges{display:flex;flex-wrap:wrap;gap:7px;justify-content:center;margin-bottom:30px}
+.badges img{height:20px}
+
+/* terminal */
+.term{
+  background:var(--code-bg);color:var(--code-ink);border-radius:11px;text-align:left;
+  font-family:var(--mono);font-size:.845rem;line-height:1.75;overflow-x:auto;
+  border:1px solid var(--line);
+}
+.term .bar{display:flex;gap:6px;padding:11px 14px;border-bottom:1px solid rgba(255,255,255,.08)}
+.term .bar i{width:10px;height:10px;border-radius:50%;background:#48453d;display:block}
+.term pre{margin:0;padding:16px 18px;white-space:pre;font:inherit}
+.p{color:#7fb98f}.c{color:#e0b168}.g{color:#6fbf8e}.d{color:#8d897d}
+
+.cta{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-top:30px}
+.btn{
+  display:inline-block;padding:10px 20px;border-radius:8px;text-decoration:none;
+  font-weight:560;font-size:.94rem;border:1px solid var(--line);
+  background:var(--panel);color:var(--ink);
+}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:#fff}
+
+/* tables */
+.tbl{width:100%;border-collapse:collapse;font-size:.92rem;display:block;overflow-x:auto}
+.tbl th,.tbl td{text-align:left;padding:11px 13px;border-bottom:1px solid var(--line);vertical-align:top}
+.tbl th{font-size:.73rem;text-transform:uppercase;letter-spacing:.08em;color:var(--dim);font-weight:600;white-space:nowrap}
+.tbl tr:last-child td{border-bottom:0}
+.no{color:var(--dim)}.yes{color:var(--good);font-weight:560}
+
+.grid{display:grid;gap:14px;grid-template-columns:repeat(auto-fit,minmax(248px,1fr))}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:11px;padding:18px 20px}
+.card h3{font-size:.97rem;margin:0 0 7px}
+.card p{margin:0;color:var(--dim);font-size:.9rem}
+.card pre{
+  background:var(--code-bg);color:var(--code-ink);border-radius:7px;padding:11px 13px;
+  margin:11px 0 0;overflow-x:auto;font-family:var(--mono);font-size:.78rem;line-height:1.6;
+}
+.note{
+  background:var(--accent-soft);border:1px solid var(--line);border-left:3px solid var(--accent);
+  border-radius:7px;padding:14px 17px;font-size:.9rem;color:var(--dim);margin-top:20px;
+}
+.note strong{color:var(--ink)}
+.stats{display:grid;gap:12px;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));text-align:center}
+.stat{background:var(--panel);border:1px solid var(--line);border-radius:11px;padding:18px 12px}
+.stat b{display:block;font-size:1.5rem;font-weight:660;letter-spacing:-.02em}
+.stat span{font-size:.76rem;text-transform:uppercase;letter-spacing:.07em;color:var(--dim)}
+footer{border-top:1px solid var(--line);padding:34px 0 50px;color:var(--dim);font-size:.87rem;text-align:center}
+footer a{margin:0 9px;white-space:nowrap;display:inline-block}
+@media(max-width:600px){ header{padding:52px 0 42px} .sec{padding:42px 0} }
+</style>
+</head>
+<body>
+
+<header class="wrap">
+  <span class="eyebrow">Local only · No network code</span>
+  <h1>File Password Remover</h1>
+  <p class="tagline">Unlock the files you own — on your own machine, with proof the result is intact.</p>
+
+  <div class="badges">
+    <img src="https://github.com/Jayanth-reflex/file-password-remover/actions/workflows/ci.yml/badge.svg" alt="CI status">
+    <img src="https://github.com/Jayanth-reflex/file-password-remover/actions/workflows/security.yml/badge.svg" alt="Security workflow status">
+    <img src="https://img.shields.io/github/v/release/Jayanth-reflex/file-password-remover?sort=semver" alt="Latest release">
+    <img src="https://img.shields.io/badge/license-Apache--2.0-blue" alt="Apache 2.0 licensed">
+  </div>
+
+  <div class="term">
+    <div class="bar"><i></i><i></i><i></i></div>
+<pre><span class="p">$</span> <span class="c">fpr remove quarterly-report.pdf</span>
+Password:
+<span class="g">✓</span> /home/you/quarterly-report-unprotected.pdf
+  removed      user-password
+  algorithm    AES-256 (PDF 2.0, R6)
+  size         2.3 MiB -&gt; 2.2 MiB in 0.41s
+  <span class="g">verified</span>     encrypted=false, pages=12, content_digest=7c411878be0a3889
+  original     /home/you/quarterly-report.pdf <span class="d">(unchanged)</span></pre>
+  </div>
+
+  <div class="cta">
+    <a class="btn primary" href="https://github.com/Jayanth-reflex/file-password-remover">View on GitHub</a>
+    <a class="btn" href="https://github.com/Jayanth-reflex/file-password-remover/releases">Download</a>
+    <a class="btn" href="https://github.com/Jayanth-reflex/file-password-remover/tree/main/docs">Documentation</a>
+  </div>
+</header>
+
+<section class="sec wrap">
+  <h2>Why not an online unlocker?</h2>
+  <p class="sub">The usual answer is to upload the file — <em>and the password</em> — to a website you have never heard of.</p>
+  <table class="tbl">
+    <thead><tr><th></th><th>Online “unlock PDF” sites</th><th>fpr</th></tr></thead>
+    <tbody>
+      <tr><td>Where your file goes</td><td class="no">Their server</td><td class="yes">Nowhere. It never leaves the disk</td></tr>
+      <tr><td>Where your password goes</td><td class="no">Their server</td><td class="yes">A wipeable buffer in local memory</td></tr>
+      <tr><td>Afterwards</td><td class="no">Their retention policy</td><td class="yes">There is no “afterwards”</td></tr>
+      <tr><td>Proof the output is intact</td><td class="no">None</td><td class="yes">Page counts and content digests, compared</td></tr>
+      <tr><td>Works offline / air-gapped</td><td class="no">No</td><td class="yes">Yes</td></tr>
+      <tr><td>Strips protection you cannot authenticate?</td><td class="no">Usually yes</td><td class="yes">No — and that is the point</td></tr>
+    </tbody>
+  </table>
+  <div class="note">
+    Most “unlockers” open a PDF with an <strong>empty</strong> password and re-save it without the permission
+    flags. That is a bypass, not a decryption. This tool refuses unless you supply the owner password.
+  </div>
+</section>
+
+<section class="sec wrap">
+  <h2>What it will and will not do</h2>
+  <p class="sub">Enforced in code, not promised in a README. Every refusal has a test proving it.</p>
+  <div class="grid">
+    <div class="card">
+      <h3>✓ Decrypts what you can authenticate</h3>
+      <p>Supply a password the file’s own verifier accepts, and it writes a new, unencrypted copy. The original is left untouched.</p>
+    </div>
+    <div class="card">
+      <h3>✕ Never guesses a password</h3>
+      <p>No recovery, no brute force, no dictionary, no retry loop. A wrong password exits <code>3</code> and writes nothing.</p>
+    </div>
+    <div class="card">
+      <h3>✕ Never bypasses encryption</h3>
+      <p>Permission flags come off only with the owner password and an explicit <code>--remove-restrictions</code>.</p>
+    </div>
+    <div class="card">
+      <h3>✕ Never touches DRM or IRM</h3>
+      <p>Information Rights Management, <code>Adobe.PubSec</code> and ebook DRM are reported and left alone.</p>
+    </div>
+  </div>
+</section>
+
+<section class="sec wrap">
+  <h2>Supported formats</h2>
+  <table class="tbl">
+    <thead><tr><th>Format</th><th>Protection handled</th><th>Engine</th></tr></thead>
+    <tbody>
+      <tr><td><strong>PDF</strong> <code>.pdf</code></td><td>Standard security handler R2–R6 — RC4-40, RC4-128, AES-128, AES-256</td><td>pikepdf / qpdf</td></tr>
+      <tr><td><strong>Word · Excel · PowerPoint</strong> <code>.docx</code> <code>.xlsx</code> <code>.pptx</code></td><td>ECMA-376 agile (Office 2010+) and standard (2007)</td><td>msoffcrypto-tool</td></tr>
+      <tr><td><strong>ZIP</strong> <code>.zip</code></td><td>WinZip AES-128/192/256, legacy ZipCrypto</td><td>pyzipper</td></tr>
+      <tr><td><strong>7-Zip</strong> <code>.7z</code></td><td>AES-256 including encrypted headers</td><td>py7zr — optional extra</td></tr>
+      <tr><td><strong>Legacy Office</strong> <code>.doc</code> <code>.xls</code> <code>.ppt</code></td><td>RC4 / CryptoAPI — <strong>experimental</strong>, needs <code>--experimental</code></td><td>msoffcrypto-tool</td></tr>
+    </tbody>
+  </table>
+</section>
+
+<section class="sec wrap">
+  <h2>Install</h2>
+  <div class="grid">
+    <div class="card">
+      <h3>pipx</h3>
+      <p>Isolated — just the commands.</p>
+      <pre>pipx install git+https://github.com/Jayanth-reflex/file-password-remover</pre>
+    </div>
+    <div class="card">
+      <h3>pip</h3>
+      <p>Also gives you the desktop app and the Python API.</p>
+      <pre>pip install "file-password-remover[sevenzip] @ \
+  git+https://github.com/Jayanth-reflex/file-password-remover"</pre>
+    </div>
+    <div class="card">
+      <h3>Docker</h3>
+      <p>Nothing installed, parsers contained. Multi-arch, non-root, cosign-signed.</p>
+      <pre>docker run --rm -v "$PWD:/data" \
+  --user "$(id -u):$(id -g)" \
+  ghcr.io/jayanth-reflex/file-password-remover \
+  inspect /data/report.pdf</pre>
+    </div>
+    <div class="card">
+      <h3>Standalone</h3>
+      <p>No Python at all. macOS, Linux and Windows bundles on the
+      <a href="https://github.com/Jayanth-reflex/file-password-remover/releases">releases page</a>. They are <strong>unsigned</strong> — verify the checksum.</p>
+    </div>
+  </div>
+  <div class="note">
+    <strong>Not on PyPI yet.</strong> <code>pip install file-password-remover</code> will be the install once the
+    project is published. The name is reserved by nobody — including us — so do not trust a package of that
+    name appearing before this note is gone.
+  </div>
+</section>
+
+<section class="sec wrap">
+  <h2>How you know it actually worked</h2>
+  <p class="sub">A success message is printed only after the written file has been re-read from disk.</p>
+  <div class="grid">
+    <div class="card"><h3>1. Capture</h3><p>Content invariants are taken from the input: page counts, per-page content-stream digests, per-entry SHA-256.</p></div>
+    <div class="card"><h3>2. Write atomically</h3><p>Output goes to a <code>0600</code> temp file in the destination’s own directory, is fsync’d, then renamed into place.</p></div>
+    <div class="card"><h3>3. Re-open</h3><p>The file is read back from disk and proved to be unprotected — not assumed from the return value of a library call.</p></div>
+    <div class="card"><h3>4. Compare</h3><p>The invariants are recomputed and checked against the ones captured from the input.</p></div>
+    <div class="card"><h3>5. Or fail loudly</h3><p>If anything mismatches, the output is scrubbed and the run exits <code>9</code>. A file that cannot be proved good never reaches the name you asked for.</p></div>
+    <div class="card"><h3>No password on argv</h3><p>There is no <code>--password VALUE</code> flag. Command lines are readable by every process and land in shell history. Use <code>--password-stdin</code>.</p></div>
+  </div>
+</section>
+
+<section class="sec wrap">
+  <h2>Quality</h2>
+  <div class="stats">
+    <div class="stat"><b>277</b><span>tests</span></div>
+    <div class="stat"><b>88 %</b><span>coverage</span></div>
+    <div class="stat"><b>0</b><span>bandit findings</span></div>
+    <div class="stat"><b>0</b><span>known advisories</span></div>
+    <div class="stat"><b>none</b><span>network code</span></div>
+  </div>
+  <p class="sub" style="margin:22px 0 0">
+    <code>mypy --strict</code> clean across the package. The Office and ZIP fixtures are written by a CFB/OLE
+    writer, an ECMA-376 agile encryptor and a ZipCrypto writer implemented in this repository from the
+    specifications, then decrypted by the third-party libraries under test — so those tests are
+    cross-implementation rather than round trips. Reproduce everything with
+    <code>bash scripts/run_verification.sh</code>.
+  </p>
+</section>
+
+<footer class="wrap">
+  <p>
+    <a href="https://github.com/Jayanth-reflex/file-password-remover">GitHub</a>·
+    <a href="https://github.com/Jayanth-reflex/file-password-remover/tree/main/docs">Docs</a>·
+    <a href="https://github.com/Jayanth-reflex/file-password-remover/blob/main/docs/product/format-matrix.md">Format matrix</a>·
+    <a href="https://github.com/Jayanth-reflex/file-password-remover/blob/main/docs/security/threat-model.md">Threat model</a>·
+    <a href="https://github.com/Jayanth-reflex/file-password-remover/blob/main/docs/reports/known-limitations.md">Known limitations</a>·
+    <a href="https://github.com/Jayanth-reflex/file-password-remover/blob/main/docs/reports/verification-report.md">Verification report</a>
+  </p>
+  <p>Apache-2.0. This site is documentation only — it has no upload form, and never will.</p>
+</footer>
+
+</body>
+</html>
