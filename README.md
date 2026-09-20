@@ -26,7 +26,7 @@ pipx install git+https://github.com/Jayanth-reflex/file-password-remover
 fpr remove quarterly-report.pdf
 ```
 
-<sub><b><a href="#install">Install</a></b> · <b><a href="#the-60-second-tour">Tour</a></b> · <b><a href="#how-you-know-it-actually-worked">How it proves itself</a></b> · <b><a href="#supported-formats">Formats</a></b> · <b><a href="#documentation">Docs</a></b></sub>
+<sub><b><a href="#install">Install</a></b> · <b><a href="#the-60-second-tour">Tour</a></b> · <b><a href="#how-you-know-it-actually-worked">How it proves itself</a></b> · <b><a href="#supported-formats">Formats</a></b> · <b><a href="#using-this-with-ai-agents">AI agents</a></b> · <b><a href="#documentation">Docs</a></b></sub>
 
 </div>
 
@@ -220,59 +220,113 @@ Full matrix, including everything deliberately **un**supported and why:
 
 ## Install
 
-<table>
-<tr><td width="50%" valign="top">
+Pick your platform. Every row gives you a working `fpr` command in one step —
+no Python required unless you want the desktop app or the API.
 
-**pipx** — isolated, just the commands
+<table>
+<tr>
+  <th align="left" width="16%">Platform</th>
+  <th align="left" width="46%">Recommended</th>
+  <th align="left" width="38%">No install / no Python</th>
+</tr>
+<tr valign="top">
+  <td>🍎 <b>macOS</b><br><sub>Apple silicon &amp; Intel</sub></td>
+  <td>
 
 ```bash
 pipx install git+https://github.com/Jayanth-reflex/file-password-remover
 ```
 
-**pip** — adds the desktop app and Python API
+  </td>
+  <td>
+
+[**Download the `.tar.gz`**](https://github.com/Jayanth-reflex/file-password-remover/releases/latest/download/file-password-remover-macOS-ARM64.tar.gz)
+→ unzip → run `./fpr`. Gatekeeper will warn — right-click → *Open* once.
+
+  </td>
+</tr>
+<tr valign="top">
+  <td>🐧 <b>Linux</b><br><sub>glibc 2.28+</sub></td>
+  <td>
 
 ```bash
-pip install "file-password-remover[sevenzip] @ git+https://github.com/Jayanth-reflex/file-password-remover"
+pipx install git+https://github.com/Jayanth-reflex/file-password-remover
 ```
 
-</td><td width="50%" valign="top">
+  </td>
+  <td>
 
-**Docker** — nothing installed, parsers contained
+[**Download the `.tar.gz`**](https://github.com/Jayanth-reflex/file-password-remover/releases/latest/download/file-password-remover-Linux-X64.tar.gz)
+→ `tar xzf *.tar.gz` → run `./fpr`
+
+  </td>
+</tr>
+<tr valign="top">
+  <td>🪟 <b>Windows</b><br><sub>10 / 11, x64</sub></td>
+  <td>
+
+```powershell
+pip install git+https://github.com/Jayanth-reflex/file-password-remover
+```
+
+  </td>
+  <td>
+
+[**Download the `.zip`**](https://github.com/Jayanth-reflex/file-password-remover/releases/latest/download/file-password-remover-Windows-X64.zip)
+→ extract → run `fpr.exe`. SmartScreen will warn — click *More info → Run
+anyway*.
+
+  </td>
+</tr>
+<tr valign="top">
+  <td>🐳 <b>Docker</b><br><sub>any OS</sub></td>
+  <td colspan="2">
 
 ```bash
-docker run --rm -v "$PWD:/data" \
-  --user "$(id -u):$(id -g)" \
-  ghcr.io/jayanth-reflex/file-password-remover \
-  inspect /data/report.pdf
+docker run --rm -v "$PWD:/data" --user "$(id -u):$(id -g)" \
+  ghcr.io/jayanth-reflex/file-password-remover inspect /data/report.pdf
 ```
 
-**Standalone** — no Python at all
+Multi-arch (amd64/arm64), non-root, [cosign-signed](docs/ops/release.md). Nothing touches the host filesystem outside `/data`.
 
-macOS, Linux and Windows bundles on the
-[releases page](https://github.com/Jayanth-reflex/file-password-remover/releases/latest).
-
-</td></tr>
+  </td>
+</tr>
 </table>
 
-Verify what you downloaded before running it:
+<sub>Want the desktop app or the Python API too? `pip install "file-password-remover[sevenzip] @ git+https://github.com/Jayanth-reflex/file-password-remover"` installs `fpr`, `fpr-gui` and the library together.</sub>
+
+**Always verify what you downloaded, before you run it:**
 
 ```bash
-shasum -a 256 -c SHA256SUMS
+shasum -a 256 -c SHA256SUMS      # macOS / Linux
+certutil -hashfile fpr.zip SHA256 # Windows, compare against SHA256SUMS
 ```
 
 > [!NOTE]
-> **Not on PyPI yet.** `pip install file-password-remover` will be the install
-> once published; the release workflow is already wired for it via PyPI Trusted
-> Publishing, and this note stays until that has actually happened. The name is
-> reserved by nobody — including us — so do not trust a package of that name
-> appearing before this note is gone.
+> **📱 iOS and Android: not shipped, on purpose — not "coming soon".** There is
+> no APK and no app-store build to fabricate a link for. Decrypting a file
+> requires holding the plaintext password and the plaintext file in memory at
+> the same time; on a general-purpose mobile OS that boundary is much harder to
+> defend than on desktop, and this project does not ship a security tool it
+> cannot back with the same verification guarantee. The reasoning and what a
+> real port would require: [ADR-0010](docs/adr/0010-no-mobile-app-this-release.md).
+> The CLI does run under Termux (Android) and a-Shell/iSH (iOS) as a
+> workaround — see [mobile/README.md](mobile/README.md).
+
+> [!NOTE]
+> **Not on PyPI yet.** `pip install file-password-remover` (no `git+`) will be
+> the install once published; the release workflow is already wired for it via
+> PyPI Trusted Publishing, and this note stays until that has actually
+> happened. The name is reserved by nobody — including us — so do not trust a
+> package of that name appearing before this note is gone.
 
 > [!WARNING]
 > The standalone bundles are **unsigned**. macOS Gatekeeper and Windows
-> SmartScreen will say so. Signing needs an Apple Developer ID and a Windows
-> code-signing certificate this project does not hold —
-> [install.md](docs/ops/install.md) shows exactly what you will see, and
-> [release.md](docs/ops/release.md) has the steps for anyone who does.
+> SmartScreen will say so — that is expected, not a sign something is wrong.
+> Signing needs an Apple Developer ID and a Windows code-signing certificate
+> this project does not hold — [install.md](docs/ops/install.md) shows exactly
+> what you will see, and [release.md](docs/ops/release.md) has the steps for
+> anyone who does.
 
 ---
 
@@ -362,10 +416,44 @@ Evidence — including what was **not** verified:
 
 ---
 
+## Using this with AI agents
+
+Yes — `fpr` is a plain CLI with a `--json` flag and
+[13 stable exit codes](docs/ops/cli.md#exit-codes), so any agent with shell
+access can drive it directly; nothing here requires MCP or a special adapter.
+
+```bash
+# machine-readable, and the password never touches argv, the shell history
+# or the environment — pipe it from wherever your agent's secret actually lives
+printf '%s' "$PASSWORD" | fpr remove report.pdf --password-stdin --json
+```
+
+Three things an agent (or the person prompting it) needs to know before using
+this that a human picks up from the prompts:
+
+1. **The password is never optional and never guessed.** There is no flag
+   that makes `fpr` try candidate passwords, and an agent should not build a
+   retry loop around one — that is exactly the brute-force behaviour this tool
+   refuses to implement. A wrong password exits `3`, once, with no output file.
+2. **`--json` on `remove`/`inspect`/`formats`** gives structured output,
+   including the `verified` block described [above](#how-you-know-it-actually-worked)
+   — check it rather than trusting exit code `0` alone if the file's integrity
+   matters to what happens next.
+3. **`inspect` first, `remove` second.** `inspect` takes no password and tells
+   you the protection class before you commit to an action — useful when an
+   agent is deciding *whether* removal is even the right move (e.g. refusing on
+   DRM, which `fpr` also refuses).
+
+Full machine-readable references, written for exactly this:
+[**agents.md**](https://file-password-remover.vercel.app/agents.md) ·
+[**llms.txt**](https://file-password-remover.vercel.app/llms.txt) ·
+[CLI reference](docs/ops/cli.md)
+
 ## Documentation
 
 | | |
 | :--- | :--- |
+| 🤖 **For AI agents** | [agents.md](https://file-password-remover.vercel.app/agents.md) · [llms.txt](https://file-password-remover.vercel.app/llms.txt) |
 | 📖 **Using it** | [CLI reference](docs/ops/cli.md) · [Install](docs/ops/install.md) · [Uninstall](docs/ops/uninstall.md) |
 | 🧭 **Scope** | [Requirements](docs/product/requirements.md) · [Format matrix](docs/product/format-matrix.md) |
 | 🏛 **Design** | [10 ADRs](docs/adr/) · [Project graph](docs/graph/project-graph.md) · [Build ledger](docs/graph/node-ledger.md) |

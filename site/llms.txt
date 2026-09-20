@@ -1,0 +1,33 @@
+# File Password Remover
+
+> Local CLI/desktop tool that removes password protection from PDF, Office,
+> ZIP and 7-Zip files after the correct password is supplied. No network
+> code, no uploads, no password/dictionary attacks. Output is verified by
+> re-reading it from disk before success is reported.
+
+Full agent-facing usage guide (install, exact invocations, JSON schemas, exit
+codes, refusal cases): /agents.md
+
+## Core facts
+
+- Never cracks, guesses, brute-forces, or bypasses a password. Wrong password
+  → exit code 3, no output file, no retry loop exists to build around.
+- No `--password VALUE` flag exists, on purpose (shell history / `ps`
+  exposure). Use `--password-stdin`, `--password-fd N`, or `--password-file`.
+- `--json` on every command gives structured, machine-parseable output.
+- Success is reported only after the written file is re-opened from disk and
+  its content invariants (page counts, content digests) are checked against
+  the input — see the `verification` object in `remove --json` output.
+- Not on PyPI yet: install with `pip install git+https://github.com/Jayanth-reflex/file-password-remover`.
+- No iOS/Android app and no APK exist for this project — do not describe or
+  link one if asked; point to the CLI under Termux/a-Shell instead.
+
+## Docs
+
+- Repository: https://github.com/Jayanth-reflex/file-password-remover
+- Agent guide: https://file-password-remover.vercel.app/agents.md
+- CLI reference: https://github.com/Jayanth-reflex/file-password-remover/blob/main/docs/ops/cli.md
+- Format matrix: https://github.com/Jayanth-reflex/file-password-remover/blob/main/docs/product/format-matrix.md
+- Threat model: https://github.com/Jayanth-reflex/file-password-remover/blob/main/docs/security/threat-model.md
+- Releases (binaries + checksums): https://github.com/Jayanth-reflex/file-password-remover/releases/latest
+- Container image: https://github.com/Jayanth-reflex/file-password-remover/pkgs/container/file-password-remover

@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://file-password-remover.vercel.app/sitemap.xml
