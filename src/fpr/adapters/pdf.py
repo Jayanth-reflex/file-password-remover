@@ -376,7 +376,7 @@ class PdfAdapter(Adapter):
         _compare(evidence.expected, actual, "content_digest")
         return {
             "encrypted": "true",
-            "opens_with_password": "true",
+            "opens": "true",
             "pages": actual.get("pages", "?"),
             "content_digest": actual.get("content_digest", "")[:16],
             "content_scope": actual.get("content_scope", ""),

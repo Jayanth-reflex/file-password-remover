@@ -87,6 +87,7 @@ has to be built in rather than promised.
 | **R-20** | Two passwords end up nested on one file | Protecting an already-encrypted file is refused; the existing protection must be removed first | Mitigated |
 | **R-21** | A generated password is predictable | `secrets` (Python), `SecRandomCopyBytes` with rejection sampling (Swift), `SecureRandom` (Kotlin); ~99 bits, and anything under 90 is refused | Mitigated — `tests/unit/test_passwords.py` |
 | **R-22** | A generated password sits in terminal scrollback | `--password-out FILE` writes it to a `0600` file instead; on Android the clipboard copy is flagged `IS_SENSITIVE` | **Partly** — printing to a terminal is still the default, because a password nobody sees is worse |
+| **R-24** | `--password-out` is not owner-only on Windows | The mode passed to `os.open` only sets the read-only flag there, so the file inherits the directory's ACLs. Stated in the `--password-out` help rather than implied by the POSIX behaviour | **Open** — choose the directory accordingly, or keep the password elsewhere |
 | **R-23** | The file is encrypted but no longer holds the original content | The output is re-opened *with the password* and its content compared against the source before success is reported. "It is encrypted" alone would be satisfied by an empty encrypted file | Mitigated |
 
 The honest residual: **this tool cannot get you back into a file whose password
@@ -110,7 +111,7 @@ code — and it is stated wherever a password is generated, not buried here.
 | Critical | none |
 | High | none |
 | Medium | R-05 (temp scrubbing on modern storage), R-08 (no parser sandbox) |
-| Low | R-07, R-11, R-12, R-16, R-22 |
+| Low | R-07, R-11, R-12, R-16, R-22, R-24 |
 
 Every medium item is documented in the README or
 [known-limitations.md](../reports/known-limitations.md) so a user can make

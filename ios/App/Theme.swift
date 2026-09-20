@@ -79,8 +79,7 @@ struct HallmarkRow: View {
         "content_scope": "scope",
         "docinfo_keys": "docinfo",
         "has_xmp": "xmp",
-        "opens_with_password": "opens",
-    ]
+            ]
 
     init(_ verification: [String: String]) {
         marks = verification

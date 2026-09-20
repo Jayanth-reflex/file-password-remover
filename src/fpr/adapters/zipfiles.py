@@ -377,7 +377,7 @@ class ZipAdapter(Adapter):
             )
         return {
             "encrypted": "true",
-            "opens_with_password": "true",
+            "opens": "true",
             "entries": str(len(infos)),
             "content_digest": hashlib.sha256(
                 "\n".join(f"{k}:{v}" for k, v in sorted(actual.items())).encode()

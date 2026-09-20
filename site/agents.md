@@ -145,7 +145,7 @@ read it back has destroyed the file it just made:
   "algorithm": "AES-256 (PDF 2.0, R6)",
   "verification": {
     "encrypted": "true",
-    "opens_with_password": "true",
+    "opens": "true",
     "pages": "3",
     "content_digest": "456cf7bce5ff12ef"
   },

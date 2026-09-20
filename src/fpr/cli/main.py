@@ -180,8 +180,10 @@ def build_parser() -> argparse.ArgumentParser:
         "--password-out",
         type=Path,
         metavar="FILE",
-        help="Write a generated password to FILE (created 0600) instead of printing it. "
-        "Safer than the terminal, which keeps scrollback.",
+        help="Write a generated password to FILE instead of printing it, which keeps it "
+        "out of terminal scrollback. Created owner-only (0600) on macOS and Linux; on "
+        "Windows it inherits the directory's permissions, so choose the directory "
+        "accordingly.",
     )
     add_password_arguments(p_protect)
 

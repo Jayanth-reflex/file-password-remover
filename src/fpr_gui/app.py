@@ -70,7 +70,6 @@ _MARK_CAPTIONS = {
     "content_scope": "scope",
     "docinfo_keys": "docinfo",
     "has_xmp": "xmp",
-    "opens_with_password": "opens",
 }
 
 

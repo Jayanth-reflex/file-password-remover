@@ -34,8 +34,7 @@ fun HallmarkRow(verification: Map<String, String>, modifier: Modifier = Modifier
         "content_scope" to "scope",
         "docinfo_keys" to "docinfo",
         "has_xmp" to "xmp",
-        "opens_with_password" to "opens",
-    )
+            )
     val marks = verification.toSortedMap().map { (key, value) ->
         (captions[key] ?: key) to value
     }

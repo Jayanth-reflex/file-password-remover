@@ -7,9 +7,12 @@ crack, so a password it generates and fails to show is a file destroyed.
 from __future__ import annotations
 
 import json
+import os
 import re
 import stat
 from pathlib import Path
+
+import pytest
 
 from fpr.cli.main import main
 from fpr.errors import ExitCode
@@ -48,7 +51,7 @@ def _write(path: Path, text: str) -> Path:
     return path
 
 
-def test_password_out_writes_owner_only_and_keeps_it_off_the_screen(
+def test_password_out_writes_the_password_and_keeps_it_off_the_screen(
     pdf_plain: Path, tmp_path: Path, capsys
 ) -> None:
     target = tmp_path / "key.txt"
@@ -58,9 +61,22 @@ def test_password_out_writes_owner_only_and_keeps_it_off_the_screen(
 
     assert code == ExitCode.OK
     assert not PASSWORD_PATTERN.search(out), "the password was printed as well as written"
+    assert PASSWORD_PATTERN.fullmatch(target.read_text().strip())
 
-    written = target.read_text().strip()
-    assert PASSWORD_PATTERN.fullmatch(written)
+
+@pytest.mark.skipif(os.name != "posix", reason="POSIX permissions")
+def test_password_out_is_owner_only(pdf_plain: Path, tmp_path: Path) -> None:
+    """Separate from the test above because this is the part Windows cannot do.
+
+    The mode passed to ``os.open`` only controls the read-only flag there, so
+    the file inherits the directory's ACLs instead of becoming owner-only. That
+    limitation is documented rather than silently skipped -- see the
+    ``--password-out`` help text and R-22 in the threat model.
+    """
+    target = tmp_path / "key.txt"
+
+    main(["protect", str(pdf_plain), "--generate", "--password-out", str(target)])
+
     mode = stat.S_IMODE(target.stat().st_mode)
     assert mode == 0o600, f"password file is {oct(mode)}, not owner-only"
 
