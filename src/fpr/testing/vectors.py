@@ -237,6 +237,17 @@ def _zip_vectors() -> list[tuple[Vector, bytes]]:
 
 
 def _sevenzip_vectors() -> list[tuple[Vector, bytes]]:
+    """7-Zip vectors, or nothing when the optional extra is absent.
+
+    ``py7zr`` is an opt-in extra (ADR-0006), so a default install must still be
+    able to build its own fixtures. The ports read the manifest rather than a
+    hardcoded list, so they simply see no 7-Zip vectors to check.
+    """
+    try:
+        import py7zr  # noqa: F401
+    except ImportError:
+        return []
+
     return [
         (
             Vector(
