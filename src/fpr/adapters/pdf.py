@@ -39,7 +39,7 @@ from ..errors import (
 )
 from ..secret import Secret
 from ..types import Detection, FormatId, Protection, Removability
-from .base import Adapter, AdapterOptions, RemovalEvidence
+from .base import Adapter, AdapterOptions, ProtectEvidence, RemovalEvidence
 
 __all__ = ["PdfAdapter"]
 
@@ -306,6 +306,82 @@ class PdfAdapter(Adapter):
         )
 
     # ------------------------------------------------------------ assurance
+    def protect(
+        self,
+        source: Path,
+        destination: Path,
+        secret: Secret,
+        options: AdapterOptions,
+    ) -> ProtectEvidence:
+        """Encrypt with AES-256 (R6), the strongest the PDF spec defines.
+
+        The same password is set as both the user and the owner password. Using
+        a different owner password would create a second credential that also
+        opens the file, which is one more thing to lose for no benefit here.
+        """
+        import pikepdf
+
+        try:
+            with pikepdf.open(source) as pdf:
+                expected = _capture_expectations(pdf)
+                with secret.expose() as password:
+                    pdf.save(
+                        destination,
+                        encryption=pikepdf.Encryption(
+                            user=password, owner=password, R=6, aes=True, metadata=True
+                        ),
+                    )
+        except pikepdf.PasswordError as exc:  # pragma: no cover - guarded by the engine
+            raise IncorrectPasswordError(f"{source.name} is already encrypted.") from exc
+        except pikepdf.PdfError as exc:
+            raise CorruptFileError(f"{source.name} could not be read as a PDF: {exc}") from exc
+
+        return ProtectEvidence(
+            protection=Protection.USER_PASSWORD,
+            algorithm="AES-256 (PDF 2.0, R6)",
+            expected=expected,
+        )
+
+    def verify_protected(
+        self, output: Path, secret: Secret, evidence: ProtectEvidence
+    ) -> dict[str, str]:
+        """Prove the file is locked, and that the password opens it unchanged.
+
+        Two separate claims, both checked: opening without a password must
+        fail, and opening *with* it must give back the content we started with.
+        A file that is encrypted but no longer holds the original pages is not
+        a success.
+        """
+        import pikepdf
+
+        if _opens_without_password(output):
+            raise VerificationError(
+                "The written PDF opens without a password. The output has been discarded."
+            )
+
+        try:
+            with secret.expose() as password, pikepdf.open(output, password=password) as pdf:
+                actual = _capture_expectations(pdf)
+        except pikepdf.PasswordError as exc:
+            raise VerificationError(
+                "The written PDF could not be opened with the password it was just given. "
+                "The output has been discarded."
+            ) from exc
+        except pikepdf.PdfError as exc:
+            raise VerificationError(
+                f"The written PDF could not be re-opened: {exc}. The output has been discarded."
+            ) from exc
+
+        _compare(evidence.expected, actual, "pages")
+        _compare(evidence.expected, actual, "content_digest")
+        return {
+            "encrypted": "true",
+            "opens_with_password": "true",
+            "pages": actual.get("pages", "?"),
+            "content_digest": actual.get("content_digest", "")[:16],
+            "content_scope": actual.get("content_scope", ""),
+        }
+
     def verify(self, output: Path, evidence: RemovalEvidence) -> dict[str, str]:
         import pikepdf
 

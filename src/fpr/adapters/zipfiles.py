@@ -36,7 +36,7 @@ from ..errors import (
 )
 from ..secret import Secret
 from ..types import Detection, FormatId, Protection, Removability
-from .base import Adapter, AdapterOptions, RemovalEvidence
+from .base import Adapter, AdapterOptions, ProtectEvidence, RemovalEvidence
 
 __all__ = ["ZipAdapter", "MAX_TOTAL_UNCOMPRESSED", "MAX_COMPRESSION_RATIO"]
 
@@ -295,6 +295,95 @@ class ZipAdapter(Adapter):
         return written
 
     # ------------------------------------------------------------ assurance
+    def protect(
+        self,
+        source: Path,
+        destination: Path,
+        secret: Secret,
+        options: AdapterOptions,
+    ) -> ProtectEvidence:
+        """Rewrite the archive with every entry under WinZip AES-256.
+
+        Entries are re-added one at a time rather than copied, because the
+        whole point is to change how each one is stored. Directory entries
+        carry no data and are recreated without encryption, which is what every
+        other archiver does.
+        """
+        import pyzipper
+
+        expected = _digest_members(source)
+        with zipfile.ZipFile(source) as zin:
+            infos = zin.infolist()
+            with pyzipper.AESZipFile(
+                destination, "w", compression=pyzipper.ZIP_DEFLATED, encryption=pyzipper.WZ_AES
+            ) as zout:
+                with secret.expose_bytes() as password:
+                    zout.setpassword(password)
+                zout.setencryption(pyzipper.WZ_AES, nbits=256)
+                for info in infos:
+                    # AESZipFile.writestr treats anything that is not one of
+                    # *its* ZipInfo class as a filename string, so a stdlib
+                    # ZipInfo fails obscurely on `.find`. The class is taken
+                    # from the archive rather than imported, because the AES
+                    # variant is not re-exported at the package root.
+                    target = zout.zipinfo_cls(info.filename, date_time=info.date_time)
+                    target.compress_type = info.compress_type
+                    target.external_attr = info.external_attr
+                    target.comment = info.comment
+                    if info.is_dir():
+                        zout.writestr(target, b"")
+                        continue
+                    zout.writestr(target, zin.read(info))
+
+        return ProtectEvidence(
+            protection=Protection.USER_PASSWORD,
+            algorithm="AES-256 (WinZip AE-2)",
+            expected=expected,
+        )
+
+    def verify_protected(
+        self, output: Path, secret: Secret, evidence: ProtectEvidence
+    ) -> dict[str, str]:
+        """Prove every entry is encrypted and still holds what it started with."""
+        import pyzipper
+
+        with zipfile.ZipFile(output) as zf:
+            infos = zf.infolist()
+            unprotected = [
+                info.filename for info in infos if not info.is_dir() and not _is_encrypted(info)
+            ]
+        if unprotected:
+            raise VerificationError(
+                f"The written archive has {len(unprotected)} unencrypted entr"
+                f"{'y' if len(unprotected) == 1 else 'ies'} "
+                f"({unprotected[0]!r}). The output has been discarded."
+            )
+
+        try:
+            with pyzipper.AESZipFile(output) as zf:
+                with secret.expose_bytes() as password:
+                    zf.setpassword(password)
+                actual = _digest_open_archive(zf)
+        except RuntimeError as exc:
+            raise VerificationError(
+                "The written archive could not be opened with the password it was just "
+                "given. The output has been discarded."
+            ) from exc
+
+        if actual != evidence.expected:
+            raise VerificationError(
+                "The contents of the written archive do not match the source. "
+                "The output has been discarded."
+            )
+        return {
+            "encrypted": "true",
+            "opens_with_password": "true",
+            "entries": str(len(infos)),
+            "content_digest": hashlib.sha256(
+                "\n".join(f"{k}:{v}" for k, v in sorted(actual.items())).encode()
+            ).hexdigest()[:16],
+        }
+
     def verify(self, output: Path, evidence: RemovalEvidence) -> dict[str, str]:
         digests: list[str] = []
         total = 0
@@ -345,3 +434,24 @@ class ZipAdapter(Adapter):
             "bytes": actual["total_bytes"],
             "content_digest": actual["content_digest"][:16],
         }
+
+
+def _digest_members(path: Path) -> dict[str, str]:
+    """Map each member name to a digest of its contents, from a plain archive."""
+    with zipfile.ZipFile(path) as zf:
+        return _digest_open_archive(zf)
+
+
+def _digest_open_archive(archive: zipfile.ZipFile) -> dict[str, str]:
+    """Same, for an archive that is already open (and possibly unlocked)."""
+    members: dict[str, str] = {}
+    for info in archive.infolist():
+        if info.is_dir():
+            members[info.filename] = "<dir>"
+            continue
+        digest = hashlib.sha256()
+        with archive.open(info, "r") as handle:
+            while chunk := handle.read(_CHUNK):
+                digest.update(chunk)
+        members[info.filename] = digest.hexdigest()
+    return members

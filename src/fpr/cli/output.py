@@ -20,7 +20,14 @@ import sys
 from pathlib import Path
 from typing import Any, TextIO
 
-from ..types import BatchReport, Detection, Outcome, RemovalResult
+from ..secret import Secret
+from ..types import (
+    BatchReport,
+    Detection,
+    Outcome,
+    ProtectResult,
+    RemovalResult,
+)
 
 __all__ = ["Renderer", "supports_colour", "human_size"]
 
@@ -76,6 +83,11 @@ def human_size(n: int) -> str:
             return f"{value:.0f} {unit}" if unit == "B" else f"{value:.1f} {unit}"
         value /= step
     return f"{value:.1f} TiB"  # pragma: no cover
+
+
+def _caption(text: str) -> str:
+    """Upper case, to match the hallmark captions."""
+    return text.upper()
 
 
 def _encodable(stream: TextIO, text: str) -> bool:
@@ -159,9 +171,11 @@ class Renderer:
         for group in blocks:
             widths = [max(len(caption), len(value)) for caption, value in group]
             caption_row = "  ".join(
-                caption.ljust(width) for (caption, _), width in zip(group, widths)
+                caption.ljust(width) for (caption, _), width in zip(group, widths, strict=True)
             )
-            value_row = "  ".join(value.ljust(width) for (_, value), width in zip(group, widths))
+            value_row = "  ".join(
+                value.ljust(width) for (_, value), width in zip(group, widths, strict=True)
+            )
             self.line(_INDENT + self._paint(caption_row.rstrip(), "brass"))
             self.line(_INDENT + value_row.rstrip())
         self.line(_INDENT + self._paint(self._rule(min(available, 46)), "dim"))
@@ -220,6 +234,66 @@ class Renderer:
         for warning in result.warnings:
             self.line(
                 f"{_INDENT}{self._paint(self._mark('warn'), 'warn')} {self._paint(warning, 'warn')}"
+            )
+
+    def protected(
+        self,
+        result: ProtectResult,
+        *,
+        generated: Secret | None = None,
+        password_file: Path | None = None,
+    ) -> None:
+        """Report a protect run, and surface a generated password exactly once.
+
+        The password is printed last and on its own, so it is the thing left on
+        screen. It is not written to the log, and it is only ever shown when
+        this tool generated it -- a password the user supplied is theirs
+        already, and echoing it would only put it in scrollback.
+        """
+        if self.as_json:
+            payload = _protect_payload(result)
+            if generated is not None:
+                # Agents need this back or the file they just created is lost.
+                with generated.expose() as text:
+                    payload["generated_password"] = text
+            if password_file is not None:
+                payload["password_file"] = str(password_file)
+            self.json(payload)
+            return
+
+        self.line(
+            f"{self._paint(self._mark('ok'), 'ok')} "
+            f"{self._paint('PROTECTED', 'ok')}  {result.output.name}"
+        )
+        self._field("applied", result.protection_applied.value)
+        if result.algorithm:
+            self._field("algorithm", result.algorithm)
+        self._field(
+            "size",
+            f"{human_size(result.bytes_in)} {self._arrow()} {human_size(result.bytes_out)} "
+            f"{self._dot()} {result.duration_s:.2f}s",
+        )
+        self._hallmark(dict(result.verification))
+        self._field("saved to", str(result.output))
+        self._field("original", f"{result.source} (unchanged)")
+        for warning in result.warnings:
+            self.line(
+                f"{_INDENT}{self._paint(self._mark('warn'), 'warn')} {self._paint(warning, 'warn')}"
+            )
+
+        if password_file is not None:
+            self.line()
+            self._field("password in", str(password_file))
+            self.line(
+                f"{_INDENT}{self._paint('Keep that file. Without it this file cannot be opened.', 'warn')}"
+            )
+        if generated is not None:
+            self.line()
+            self.line(_INDENT + self._paint(_caption("password"), "brass"))
+            with generated.expose() as text:
+                self.line(_INDENT + text)
+            self.line(
+                f"{_INDENT}{self._paint('Save this now. It is shown once, and this tool cannot recover it.', 'warn')}"
             )
 
     def batch(self, report: BatchReport) -> None:
@@ -312,3 +386,19 @@ def _encode(obj: object) -> Any:
     if dataclasses.is_dataclass(obj) and not isinstance(obj, type):
         return dataclasses.asdict(obj)
     return str(obj)
+
+
+def _protect_payload(result: ProtectResult) -> dict[str, Any]:
+    return {
+        "ok": True,
+        "source": str(result.source),
+        "output": str(result.output),
+        "format": result.format_id.value,
+        "protection_applied": result.protection_applied.value,
+        "algorithm": result.algorithm,
+        "bytes_in": result.bytes_in,
+        "bytes_out": result.bytes_out,
+        "duration_s": round(result.duration_s, 3),
+        "verification": dict(result.verification),
+        "warnings": list(result.warnings),
+    }

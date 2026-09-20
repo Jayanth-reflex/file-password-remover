@@ -89,7 +89,7 @@ def _hallmark(app) -> dict[str, str]:
     ]
     cleaned = [text.replace("\u2009", "") for text in labels]
     # Built column by column, so children interleave caption, value, caption...
-    return dict(zip(cleaned[0::2], cleaned[1::2]))
+    return dict(zip(cleaned[0::2], cleaned[1::2], strict=False))
 
 
 def test_a_successful_run_reports_the_verification_evidence(app, pdf_encrypted: Path) -> None:

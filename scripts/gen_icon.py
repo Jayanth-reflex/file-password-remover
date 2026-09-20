@@ -91,7 +91,10 @@ def draw_mark(size: int, *, ground: bool = True, lit: bool = True) -> Image.Imag
             ratio = row / max(scale - 1, 1)
             draw.line(
                 [(0, row), (scale, row)],
-                fill=tuple(round(top + (base - top) * ratio) for top, base in zip(INK_TOP, INK)),
+                fill=tuple(
+                    round(top + (base - top) * ratio)
+                    for top, base in zip(INK_TOP, INK, strict=True)
+                ),
             )
 
     draw.polygon(_punch(scale), fill=BRASS_LIT if lit else BRASS)

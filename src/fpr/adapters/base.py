@@ -22,6 +22,7 @@ import abc
 from dataclasses import dataclass, field
 from pathlib import Path
 
+from ..errors import UnsupportedFormatError
 from ..secret import Secret
 from ..types import Detection, FormatId, Protection
 
@@ -47,6 +48,18 @@ class AdapterOptions:
 
     preserve_timestamps: bool = True
     """Copy mtime/atime from the source to the output where the format allows."""
+
+
+@dataclass(slots=True)
+class ProtectEvidence:
+    """What an adapter did while adding protection, for the verify step."""
+
+    protection: Protection
+    algorithm: str | None = None
+    warnings: tuple[str, ...] = ()
+    #: Whatever the adapter needs to prove the content survived, e.g. a page
+    #: count or a map of member digests taken from the source before writing.
+    expected: dict[str, str] = field(default_factory=dict)
 
 
 @dataclass(slots=True)
@@ -119,6 +132,37 @@ class Adapter(abc.ABC):
         """
 
     # ------------------------------------------------------------- utilities
+    def protect(
+        self,
+        source: Path,
+        destination: Path,
+        secret: Secret,
+        options: AdapterOptions,
+    ) -> ProtectEvidence:
+        """Write ``source`` to ``destination`` encrypted with ``secret``.
+
+        Optional: adapters that cannot add protection inherit this refusal
+        rather than pretending. Saying so plainly is the point -- a tool that
+        silently wrote an unencrypted copy here would be dangerous.
+        """
+        raise UnsupportedFormatError(
+            f"Adding protection to {self.format_id.value.upper()} files is not supported yet.",
+            remediation="This tool can remove protection from this format, but not add it. "
+            "PDF and ZIP can both be protected.",
+        )
+
+    def verify_protected(
+        self, output: Path, secret: Secret, evidence: ProtectEvidence
+    ) -> dict[str, str]:
+        """Re-open ``output`` with ``secret`` and prove the content survived.
+
+        Mirrors :meth:`verify`. Adapters that implement :meth:`protect` must
+        implement this too: writing a file nobody has opened is not a success.
+        """
+        raise UnsupportedFormatError(
+            f"Adding protection to {self.format_id.value.upper()} files is not supported yet."
+        )
+
     def default_output_name(self, source: Path, suffix: str = "-unprotected") -> Path:
         """``report.pdf`` -> ``report-unprotected.pdf``."""
         return source.with_name(f"{source.stem}{suffix}{source.suffix}")

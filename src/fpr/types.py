@@ -17,6 +17,7 @@ __all__ = [
     "Detection",
     "Outcome",
     "RemovalResult",
+    "ProtectResult",
     "BatchReport",
 ]
 
@@ -164,3 +165,24 @@ class BatchReport:
     @property
     def skipped(self) -> int:
         return sum(1 for i in self.items if i.outcome is Outcome.SKIPPED)
+
+
+@dataclass(frozen=True, slots=True)
+class ProtectResult:
+    """What one successful protect run did.
+
+    Mirrors :class:`RemovalResult`. ``verification`` is the evidence gathered by
+    re-opening the written file *with the password* -- the same discipline the
+    removal path uses, applied to the inverse operation.
+    """
+
+    source: Path
+    output: Path
+    format_id: FormatId
+    protection_applied: Protection
+    algorithm: str | None
+    bytes_in: int
+    bytes_out: int
+    duration_s: float
+    verification: dict[str, str] = field(default_factory=dict)
+    warnings: tuple[str, ...] = ()
