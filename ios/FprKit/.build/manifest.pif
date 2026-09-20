@@ -5,11 +5,11 @@
       "name" : "FprKit",
       "path" : "/Users/jayanth/Desktop/resume/projects/file-password-remover/ios/FprKit",
       "projects" : [
-        "f2fcc2f258a71996498c2fceef3a253136e8690b1c3aa2aad689e27a729238a2",
+        "5b35dbb5d3016845be0a785c47c009cdb3c424a5184c0d9fba5e5edac190e536",
         "aa1f693dcbc5ef6135ec72eb0749087663128509aae9fd2641e6f1bc95ac38c4"
       ]
     },
-    "signature" : "66304de7a0ff012c43a6f1754e8c3d80865ee9a8cc947161e63e1183939d1e2f",
+    "signature" : "b3ce77234213e1e792b02a959019d03abc2f007b84245c09f7fd1595cdee4a71",
     "type" : "workspace"
   },
   {
@@ -207,6 +207,22 @@
               {
                 "fileType" : "sourcecode.swift",
                 "guid" : "PACKAGE:fprkit::MAINGROUP::REF_2::REF_0",
+                "name" : "EngineTests.swift",
+                "path" : "EngineTests.swift",
+                "sourceTree" : "<group>",
+                "type" : "file"
+              },
+              {
+                "fileType" : "sourcecode.swift",
+                "guid" : "PACKAGE:fprkit::MAINGROUP::REF_2::REF_1",
+                "name" : "LegacyOfficeAdapterTests.swift",
+                "path" : "LegacyOfficeAdapterTests.swift",
+                "sourceTree" : "<group>",
+                "type" : "file"
+              },
+              {
+                "fileType" : "sourcecode.swift",
+                "guid" : "PACKAGE:fprkit::MAINGROUP::REF_2::REF_2",
                 "name" : "OOXMLAdapterTests.swift",
                 "path" : "OOXMLAdapterTests.swift",
                 "sourceTree" : "<group>",
@@ -214,7 +230,7 @@
               },
               {
                 "fileType" : "sourcecode.swift",
-                "guid" : "PACKAGE:fprkit::MAINGROUP::REF_2::REF_1",
+                "guid" : "PACKAGE:fprkit::MAINGROUP::REF_2::REF_3",
                 "name" : "PDFAdapterTests.swift",
                 "path" : "PDFAdapterTests.swift",
                 "sourceTree" : "<group>",
@@ -222,7 +238,15 @@
               },
               {
                 "fileType" : "sourcecode.swift",
-                "guid" : "PACKAGE:fprkit::MAINGROUP::REF_2::REF_2",
+                "guid" : "PACKAGE:fprkit::MAINGROUP::REF_2::REF_4",
+                "name" : "RemovalModelTests.swift",
+                "path" : "RemovalModelTests.swift",
+                "sourceTree" : "<group>",
+                "type" : "file"
+              },
+              {
+                "fileType" : "sourcecode.swift",
+                "guid" : "PACKAGE:fprkit::MAINGROUP::REF_2::REF_5",
                 "name" : "VectorCorpus.swift",
                 "path" : "VectorCorpus.swift",
                 "sourceTree" : "<group>",
@@ -230,7 +254,7 @@
               },
               {
                 "fileType" : "sourcecode.swift",
-                "guid" : "PACKAGE:fprkit::MAINGROUP::REF_2::REF_3",
+                "guid" : "PACKAGE:fprkit::MAINGROUP::REF_2::REF_6",
                 "name" : "ZipAdapterTests.swift",
                 "path" : "ZipAdapterTests.swift",
                 "sourceTree" : "<group>",
@@ -238,7 +262,7 @@
               },
               {
                 "fileType" : "sourcecode.swift",
-                "guid" : "PACKAGE:fprkit::MAINGROUP::REF_2::REF_4",
+                "guid" : "PACKAGE:fprkit::MAINGROUP::REF_2::REF_7",
                 "name" : "ZipRemovalTests.swift",
                 "path" : "ZipRemovalTests.swift",
                 "sourceTree" : "<group>",
@@ -288,6 +312,22 @@
               {
                 "fileType" : "sourcecode.swift",
                 "guid" : "PACKAGE:fprkit::MAINGROUP::REF_3::REF_4",
+                "name" : "Engine.swift",
+                "path" : "Engine.swift",
+                "sourceTree" : "<group>",
+                "type" : "file"
+              },
+              {
+                "fileType" : "sourcecode.swift",
+                "guid" : "PACKAGE:fprkit::MAINGROUP::REF_3::REF_5",
+                "name" : "LegacyOfficeAdapter.swift",
+                "path" : "LegacyOfficeAdapter.swift",
+                "sourceTree" : "<group>",
+                "type" : "file"
+              },
+              {
+                "fileType" : "sourcecode.swift",
+                "guid" : "PACKAGE:fprkit::MAINGROUP::REF_3::REF_6",
                 "name" : "OOXMLAdapter.swift",
                 "path" : "OOXMLAdapter.swift",
                 "sourceTree" : "<group>",
@@ -295,7 +335,7 @@
               },
               {
                 "fileType" : "sourcecode.swift",
-                "guid" : "PACKAGE:fprkit::MAINGROUP::REF_3::REF_5",
+                "guid" : "PACKAGE:fprkit::MAINGROUP::REF_3::REF_7",
                 "name" : "PDFAdapter.swift",
                 "path" : "PDFAdapter.swift",
                 "sourceTree" : "<group>",
@@ -303,7 +343,15 @@
               },
               {
                 "fileType" : "sourcecode.swift",
-                "guid" : "PACKAGE:fprkit::MAINGROUP::REF_3::REF_6",
+                "guid" : "PACKAGE:fprkit::MAINGROUP::REF_3::REF_8",
+                "name" : "RemovalModel.swift",
+                "path" : "RemovalModel.swift",
+                "sourceTree" : "<group>",
+                "type" : "file"
+              },
+              {
+                "fileType" : "sourcecode.swift",
+                "guid" : "PACKAGE:fprkit::MAINGROUP::REF_3::REF_9",
                 "name" : "Types.swift",
                 "path" : "Types.swift",
                 "sourceTree" : "<group>",
@@ -311,7 +359,7 @@
               },
               {
                 "fileType" : "sourcecode.swift",
-                "guid" : "PACKAGE:fprkit::MAINGROUP::REF_3::REF_7",
+                "guid" : "PACKAGE:fprkit::MAINGROUP::REF_3::REF_10",
                 "name" : "ZipAdapter.swift",
                 "path" : "ZipAdapter.swift",
                 "sourceTree" : "<group>",
@@ -319,7 +367,7 @@
               },
               {
                 "fileType" : "sourcecode.swift",
-                "guid" : "PACKAGE:fprkit::MAINGROUP::REF_3::REF_8",
+                "guid" : "PACKAGE:fprkit::MAINGROUP::REF_3::REF_11",
                 "name" : "ZipArchive.swift",
                 "path" : "ZipArchive.swift",
                 "sourceTree" : "<group>",
@@ -327,7 +375,7 @@
               },
               {
                 "fileType" : "sourcecode.swift",
-                "guid" : "PACKAGE:fprkit::MAINGROUP::REF_3::REF_9",
+                "guid" : "PACKAGE:fprkit::MAINGROUP::REF_3::REF_12",
                 "name" : "ZipStructure.swift",
                 "path" : "ZipStructure.swift",
                 "sourceTree" : "<group>",
@@ -377,6 +425,22 @@
               {
                 "fileType" : "sourcecode.swift",
                 "guid" : "PACKAGE:fprkit::MAINGROUP::REF_4::REF_4",
+                "name" : "Engine.swift",
+                "path" : "Engine.swift",
+                "sourceTree" : "<group>",
+                "type" : "file"
+              },
+              {
+                "fileType" : "sourcecode.swift",
+                "guid" : "PACKAGE:fprkit::MAINGROUP::REF_4::REF_5",
+                "name" : "LegacyOfficeAdapter.swift",
+                "path" : "LegacyOfficeAdapter.swift",
+                "sourceTree" : "<group>",
+                "type" : "file"
+              },
+              {
+                "fileType" : "sourcecode.swift",
+                "guid" : "PACKAGE:fprkit::MAINGROUP::REF_4::REF_6",
                 "name" : "OOXMLAdapter.swift",
                 "path" : "OOXMLAdapter.swift",
                 "sourceTree" : "<group>",
@@ -384,7 +448,7 @@
               },
               {
                 "fileType" : "sourcecode.swift",
-                "guid" : "PACKAGE:fprkit::MAINGROUP::REF_4::REF_5",
+                "guid" : "PACKAGE:fprkit::MAINGROUP::REF_4::REF_7",
                 "name" : "PDFAdapter.swift",
                 "path" : "PDFAdapter.swift",
                 "sourceTree" : "<group>",
@@ -392,7 +456,15 @@
               },
               {
                 "fileType" : "sourcecode.swift",
-                "guid" : "PACKAGE:fprkit::MAINGROUP::REF_4::REF_6",
+                "guid" : "PACKAGE:fprkit::MAINGROUP::REF_4::REF_8",
+                "name" : "RemovalModel.swift",
+                "path" : "RemovalModel.swift",
+                "sourceTree" : "<group>",
+                "type" : "file"
+              },
+              {
+                "fileType" : "sourcecode.swift",
+                "guid" : "PACKAGE:fprkit::MAINGROUP::REF_4::REF_9",
                 "name" : "Types.swift",
                 "path" : "Types.swift",
                 "sourceTree" : "<group>",
@@ -400,7 +472,7 @@
               },
               {
                 "fileType" : "sourcecode.swift",
-                "guid" : "PACKAGE:fprkit::MAINGROUP::REF_4::REF_7",
+                "guid" : "PACKAGE:fprkit::MAINGROUP::REF_4::REF_10",
                 "name" : "ZipAdapter.swift",
                 "path" : "ZipAdapter.swift",
                 "sourceTree" : "<group>",
@@ -408,7 +480,7 @@
               },
               {
                 "fileType" : "sourcecode.swift",
-                "guid" : "PACKAGE:fprkit::MAINGROUP::REF_4::REF_8",
+                "guid" : "PACKAGE:fprkit::MAINGROUP::REF_4::REF_11",
                 "name" : "ZipArchive.swift",
                 "path" : "ZipArchive.swift",
                 "sourceTree" : "<group>",
@@ -416,7 +488,7 @@
               },
               {
                 "fileType" : "sourcecode.swift",
-                "guid" : "PACKAGE:fprkit::MAINGROUP::REF_4::REF_9",
+                "guid" : "PACKAGE:fprkit::MAINGROUP::REF_4::REF_12",
                 "name" : "ZipStructure.swift",
                 "path" : "ZipStructure.swift",
                 "sourceTree" : "<group>",
@@ -442,15 +514,15 @@
       "projectIsPackage" : "true",
       "projectName" : "FprKit",
       "targets" : [
-        "5bc1b34c79c45114634ce7411f9a0fc084d2ce83a0016cb6126678988a8b4ac9",
+        "89dd06a0e03f6168ea4f58ad966a6690a4f0b6c11c786477b4622e98af6494f2",
         "950dd311c5361c44a7f42d0344bfc32c2cf30bbfbf14ecf602f6cd9d23d2acf2",
         "1f88f023b33f9b8f626b8c1595f2bb5de133d4594b20e3392d5fbe3783f5ff02",
-        "1d935add02f98793705ec0e6cb7c0fe389f9f1f69402a39b9b93aedea1f3f97b",
-        "d1349c8b249a624c1708f094622189dbfc5f7ce93e923f44ae9c5664e6d96419",
+        "46e2c3f28099bb6791f74618159bc1daff4c5068ef3895e94774161ce67de5da",
+        "be4e179bae46cbc8ed979f0b1a0c7b0d1a4bdfd649628feb74cdf387543f54cd",
         "19cad067ee38de68034f652bd0645ab58c4388f1482144b748df1fb441310e1f"
       ]
     },
-    "signature" : "f2fcc2f258a71996498c2fceef3a253136e8690b1c3aa2aad689e27a729238a2",
+    "signature" : "5b35dbb5d3016845be0a785c47c009cdb3c424a5184c0d9fba5e5edac190e536",
     "type" : "project"
   },
   {
@@ -669,6 +741,33 @@
 
               ],
               "removeHeadersOnCopy" : "false"
+            },
+            {
+              "codeSignOnCopy" : "false",
+              "fileReference" : "PACKAGE:fprkit::MAINGROUP::REF_2::REF_5",
+              "guid" : "PACKAGE-PRODUCT:fprkit_FprKitTests.FprKitTests::BUILDPHASE_0::5",
+              "platformFilters" : [
+
+              ],
+              "removeHeadersOnCopy" : "false"
+            },
+            {
+              "codeSignOnCopy" : "false",
+              "fileReference" : "PACKAGE:fprkit::MAINGROUP::REF_2::REF_6",
+              "guid" : "PACKAGE-PRODUCT:fprkit_FprKitTests.FprKitTests::BUILDPHASE_0::6",
+              "platformFilters" : [
+
+              ],
+              "removeHeadersOnCopy" : "false"
+            },
+            {
+              "codeSignOnCopy" : "false",
+              "fileReference" : "PACKAGE:fprkit::MAINGROUP::REF_2::REF_7",
+              "guid" : "PACKAGE-PRODUCT:fprkit_FprKitTests.FprKitTests::BUILDPHASE_0::7",
+              "platformFilters" : [
+
+              ],
+              "removeHeadersOnCopy" : "false"
             }
           ],
           "guid" : "PACKAGE-PRODUCT:fprkit_FprKitTests.FprKitTests::BUILDPHASE_0",
@@ -712,7 +811,7 @@
       "productTypeIdentifier" : "com.apple.product-type.bundle.unit-test",
       "type" : "standard"
     },
-    "signature" : "5bc1b34c79c45114634ce7411f9a0fc084d2ce83a0016cb6126678988a8b4ac9",
+    "signature" : "89dd06a0e03f6168ea4f58ad966a6690a4f0b6c11c786477b4622e98af6494f2",
     "type" : "target"
   },
   {
@@ -1127,6 +1226,33 @@
 
               ],
               "removeHeadersOnCopy" : "false"
+            },
+            {
+              "codeSignOnCopy" : "false",
+              "fileReference" : "PACKAGE:fprkit::MAINGROUP::REF_3::REF_10",
+              "guid" : "PACKAGE-TARGET:FprKit::BUILDPHASE_0::10",
+              "platformFilters" : [
+
+              ],
+              "removeHeadersOnCopy" : "false"
+            },
+            {
+              "codeSignOnCopy" : "false",
+              "fileReference" : "PACKAGE:fprkit::MAINGROUP::REF_3::REF_11",
+              "guid" : "PACKAGE-TARGET:FprKit::BUILDPHASE_0::11",
+              "platformFilters" : [
+
+              ],
+              "removeHeadersOnCopy" : "false"
+            },
+            {
+              "codeSignOnCopy" : "false",
+              "fileReference" : "PACKAGE:fprkit::MAINGROUP::REF_3::REF_12",
+              "guid" : "PACKAGE-TARGET:FprKit::BUILDPHASE_0::12",
+              "platformFilters" : [
+
+              ],
+              "removeHeadersOnCopy" : "false"
             }
           ],
           "guid" : "PACKAGE-TARGET:FprKit::BUILDPHASE_0",
@@ -1153,7 +1279,7 @@
       "productTypeIdentifier" : "org.swift.product-type.library.static",
       "type" : "standard"
     },
-    "signature" : "1d935add02f98793705ec0e6cb7c0fe389f9f1f69402a39b9b93aedea1f3f97b",
+    "signature" : "46e2c3f28099bb6791f74618159bc1daff4c5068ef3895e94774161ce67de5da",
     "type" : "target"
   },
   {
@@ -1414,6 +1540,33 @@
 
               ],
               "removeHeadersOnCopy" : "false"
+            },
+            {
+              "codeSignOnCopy" : "false",
+              "fileReference" : "PACKAGE:fprkit::MAINGROUP::REF_4::REF_10",
+              "guid" : "PACKAGE-TARGET:FprKit-186A02C482EED6-dynamic::BUILDPHASE_0::10",
+              "platformFilters" : [
+
+              ],
+              "removeHeadersOnCopy" : "false"
+            },
+            {
+              "codeSignOnCopy" : "false",
+              "fileReference" : "PACKAGE:fprkit::MAINGROUP::REF_4::REF_11",
+              "guid" : "PACKAGE-TARGET:FprKit-186A02C482EED6-dynamic::BUILDPHASE_0::11",
+              "platformFilters" : [
+
+              ],
+              "removeHeadersOnCopy" : "false"
+            },
+            {
+              "codeSignOnCopy" : "false",
+              "fileReference" : "PACKAGE:fprkit::MAINGROUP::REF_4::REF_12",
+              "guid" : "PACKAGE-TARGET:FprKit-186A02C482EED6-dynamic::BUILDPHASE_0::12",
+              "platformFilters" : [
+
+              ],
+              "removeHeadersOnCopy" : "false"
             }
           ],
           "guid" : "PACKAGE-TARGET:FprKit-186A02C482EED6-dynamic::BUILDPHASE_0",
@@ -1439,7 +1592,7 @@
       "productTypeIdentifier" : "com.apple.product-type.library.dynamic",
       "type" : "standard"
     },
-    "signature" : "d1349c8b249a624c1708f094622189dbfc5f7ce93e923f44ae9c5664e6d96419",
+    "signature" : "be4e179bae46cbc8ed979f0b1a0c7b0d1a4bdfd649628feb74cdf387543f54cd",
     "type" : "target"
   },
   {

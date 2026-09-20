@@ -40,6 +40,22 @@ final class PDFAdapterTests: XCTestCase {
         XCTAssertEqual(try PDFAdapter().pageCount(output), expectedPages)
     }
 
+    /// PDFKit writes the original security handler back out for R2-R4, so those
+    /// revisions go through the page-rebuild path. All five must come out clean.
+    func testRemovesEncryptionAcrossEveryStandardSecurityRevision() throws {
+        let corpus = try VectorCorpus.load()
+        for id in [
+            "pdf-rc4-40-user", "pdf-rc4-128-user", "pdf-aes-128-user",
+            "pdf-aes-256-r5-user", "pdf-aes-256-r6-user",
+        ] {
+            let expectedPages = try XCTUnwrap(corpus.vector(id).expect.pages)
+            let output = try PDFAdapter().remove(try corpus.data(id), password: corpus.correctPassword)
+
+            XCTAssertEqual(try PDFAdapter().detect(output).protection, .none, "\(id) still encrypted")
+            XCTAssertEqual(try PDFAdapter().pageCount(output), expectedPages, "\(id) lost pages")
+        }
+    }
+
     func testRejectsTheWrongPassword() throws {
         let corpus = try VectorCorpus.load()
         XCTAssertThrowsError(

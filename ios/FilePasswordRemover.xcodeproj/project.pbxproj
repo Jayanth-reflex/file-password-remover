@@ -1,0 +1,322 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 56;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		D7E375EEA90EB4137165AF04 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DF2F3E3A3AA824B0E8E719B7 /* ContentView.swift */; };
+		40D478C5978E1731DA4A3754 /* FilePasswordRemoverApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = C6673CB124E81FE5F69F7039 /* FilePasswordRemoverApp.swift */; };
+		C3D7C2DE68C1581E9EAB915E /* ByteReader.swift in Sources */ = {isa = PBXBuildFile; fileRef = AD42C1AF1A55B77484D4122D /* ByteReader.swift */; };
+		01EDBA9CB621C5CB4952D5E8 /* CFBReader.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0D2C838EF5F8F41495A6A1CB /* CFBReader.swift */; };
+		94EC3A6AF9871B82BCE79BD7 /* Crypto.swift in Sources */ = {isa = PBXBuildFile; fileRef = 96EC45357329CAB55AC9DAED /* Crypto.swift */; };
+		D5DD2505F141C53255798ED8 /* Deflate.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5B05CBBEFFFB0FD275DD5BE /* Deflate.swift */; };
+		3A4CA355FDBD18235FE598EC /* Engine.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2A4562F4F12B659B3470A01F /* Engine.swift */; };
+		8FA55203B61E904A8EE57368 /* LegacyOfficeAdapter.swift in Sources */ = {isa = PBXBuildFile; fileRef = B4304BC95D98610192865401 /* LegacyOfficeAdapter.swift */; };
+		590E52C057F61689E7637663 /* OOXMLAdapter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 408AAF049D9496970FA7841B /* OOXMLAdapter.swift */; };
+		97D907FDD4652616C53C2D69 /* PDFAdapter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 18A6B2028DB800154A849FD4 /* PDFAdapter.swift */; };
+		E5EB8A2AB1880D0B3E896797 /* RemovalModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = E2D6DB0676A47CD133237649 /* RemovalModel.swift */; };
+		5B2C656637B82FA760F17840 /* Types.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3777DE870F88EE4DFF01352D /* Types.swift */; };
+		C7507012FC7836D11820DD1C /* ZipAdapter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7C09103E93B056833103278C /* ZipAdapter.swift */; };
+		F077BF00BCA166993D436133 /* ZipArchive.swift in Sources */ = {isa = PBXBuildFile; fileRef = 634FF72CAE758819A3F8CC6D /* ZipArchive.swift */; };
+		955542B62E51E51B7523DFC9 /* ZipStructure.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1CF33DC1DD9B47E88F2B4D1A /* ZipStructure.swift */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXFileReference section */
+		DF2F3E3A3AA824B0E8E719B7 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ContentView.swift; path = "App/ContentView.swift"; sourceTree = "<group>"; };
+		C6673CB124E81FE5F69F7039 /* FilePasswordRemoverApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = FilePasswordRemoverApp.swift; path = "App/FilePasswordRemoverApp.swift"; sourceTree = "<group>"; };
+		AD42C1AF1A55B77484D4122D /* ByteReader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ByteReader.swift; path = "FprKit/Sources/FprKit/ByteReader.swift"; sourceTree = "<group>"; };
+		0D2C838EF5F8F41495A6A1CB /* CFBReader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = CFBReader.swift; path = "FprKit/Sources/FprKit/CFBReader.swift"; sourceTree = "<group>"; };
+		96EC45357329CAB55AC9DAED /* Crypto.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = Crypto.swift; path = "FprKit/Sources/FprKit/Crypto.swift"; sourceTree = "<group>"; };
+		A5B05CBBEFFFB0FD275DD5BE /* Deflate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = Deflate.swift; path = "FprKit/Sources/FprKit/Deflate.swift"; sourceTree = "<group>"; };
+		2A4562F4F12B659B3470A01F /* Engine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = Engine.swift; path = "FprKit/Sources/FprKit/Engine.swift"; sourceTree = "<group>"; };
+		B4304BC95D98610192865401 /* LegacyOfficeAdapter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = LegacyOfficeAdapter.swift; path = "FprKit/Sources/FprKit/LegacyOfficeAdapter.swift"; sourceTree = "<group>"; };
+		408AAF049D9496970FA7841B /* OOXMLAdapter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = OOXMLAdapter.swift; path = "FprKit/Sources/FprKit/OOXMLAdapter.swift"; sourceTree = "<group>"; };
+		18A6B2028DB800154A849FD4 /* PDFAdapter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = PDFAdapter.swift; path = "FprKit/Sources/FprKit/PDFAdapter.swift"; sourceTree = "<group>"; };
+		E2D6DB0676A47CD133237649 /* RemovalModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = RemovalModel.swift; path = "FprKit/Sources/FprKit/RemovalModel.swift"; sourceTree = "<group>"; };
+		3777DE870F88EE4DFF01352D /* Types.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = Types.swift; path = "FprKit/Sources/FprKit/Types.swift"; sourceTree = "<group>"; };
+		7C09103E93B056833103278C /* ZipAdapter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ZipAdapter.swift; path = "FprKit/Sources/FprKit/ZipAdapter.swift"; sourceTree = "<group>"; };
+		634FF72CAE758819A3F8CC6D /* ZipArchive.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ZipArchive.swift; path = "FprKit/Sources/FprKit/ZipArchive.swift"; sourceTree = "<group>"; };
+		1CF33DC1DD9B47E88F2B4D1A /* ZipStructure.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ZipStructure.swift; path = "FprKit/Sources/FprKit/ZipStructure.swift"; sourceTree = "<group>"; };
+		57E22DF2FCF18E685BEEF469 /* FilePasswordRemover.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = FilePasswordRemover.app; sourceTree = BUILT_PRODUCTS_DIR; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		CB13121E7B38A4EA42273B70 = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		2CC6F1CE18ED8B5EAA39A517 = {
+			isa = PBXGroup;
+			children = (
+				4658E38DFFDE4378535F39B4 /* App */,
+				33EE517847AEC8709B6E3CC3 /* FprKit */,
+				BEAD8915881B60FC177E63AB /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		4658E38DFFDE4378535F39B4 /* App */ = {
+			isa = PBXGroup;
+			children = (
+				DF2F3E3A3AA824B0E8E719B7 /* ContentView.swift */,
+				C6673CB124E81FE5F69F7039 /* FilePasswordRemoverApp.swift */,
+			);
+			name = App;
+			sourceTree = "<group>";
+		};
+		33EE517847AEC8709B6E3CC3 /* FprKit */ = {
+			isa = PBXGroup;
+			children = (
+				AD42C1AF1A55B77484D4122D /* ByteReader.swift */,
+				0D2C838EF5F8F41495A6A1CB /* CFBReader.swift */,
+				96EC45357329CAB55AC9DAED /* Crypto.swift */,
+				A5B05CBBEFFFB0FD275DD5BE /* Deflate.swift */,
+				2A4562F4F12B659B3470A01F /* Engine.swift */,
+				B4304BC95D98610192865401 /* LegacyOfficeAdapter.swift */,
+				408AAF049D9496970FA7841B /* OOXMLAdapter.swift */,
+				18A6B2028DB800154A849FD4 /* PDFAdapter.swift */,
+				E2D6DB0676A47CD133237649 /* RemovalModel.swift */,
+				3777DE870F88EE4DFF01352D /* Types.swift */,
+				7C09103E93B056833103278C /* ZipAdapter.swift */,
+				634FF72CAE758819A3F8CC6D /* ZipArchive.swift */,
+				1CF33DC1DD9B47E88F2B4D1A /* ZipStructure.swift */,
+			);
+			name = FprKit;
+			sourceTree = "<group>";
+		};
+		BEAD8915881B60FC177E63AB /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				57E22DF2FCF18E685BEEF469 /* FilePasswordRemover.app */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		319EE69D8F6F21EFCFDD06EB /* FilePasswordRemover */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = FC2D85EAC57C6131A47B1167;
+			buildPhases = (
+				641785E3321B88C35C19FF1C,
+				CB13121E7B38A4EA42273B70,
+				CE4E6D0062D19FA98E95482A,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = FilePasswordRemover;
+			productName = FilePasswordRemover;
+			productReference = 57E22DF2FCF18E685BEEF469 /* FilePasswordRemover.app */;
+			productType = "com.apple.product-type.application";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		244210E48437B6556980A702 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = 1;
+				LastSwiftUpdateCheck = 1600;
+				LastUpgradeCheck = 1600;
+				TargetAttributes = {
+					319EE69D8F6F21EFCFDD06EB = {
+						CreatedOnToolsVersion = 16.0;
+					};
+				};
+			};
+			buildConfigurationList = B2B4ECC9A8CC5D22C95C629A;
+			compatibilityVersion = "Xcode 14.0";
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+				Base,
+			);
+			mainGroup = 2CC6F1CE18ED8B5EAA39A517;
+			productRefGroup = BEAD8915881B60FC177E63AB /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				319EE69D8F6F21EFCFDD06EB /* FilePasswordRemover */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		CE4E6D0062D19FA98E95482A = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		641785E3321B88C35C19FF1C = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				D7E375EEA90EB4137165AF04 /* ContentView.swift in Sources */,
+				40D478C5978E1731DA4A3754 /* FilePasswordRemoverApp.swift in Sources */,
+				C3D7C2DE68C1581E9EAB915E /* ByteReader.swift in Sources */,
+				01EDBA9CB621C5CB4952D5E8 /* CFBReader.swift in Sources */,
+				94EC3A6AF9871B82BCE79BD7 /* Crypto.swift in Sources */,
+				D5DD2505F141C53255798ED8 /* Deflate.swift in Sources */,
+				3A4CA355FDBD18235FE598EC /* Engine.swift in Sources */,
+				8FA55203B61E904A8EE57368 /* LegacyOfficeAdapter.swift in Sources */,
+				590E52C057F61689E7637663 /* OOXMLAdapter.swift in Sources */,
+				97D907FDD4652616C53C2D69 /* PDFAdapter.swift in Sources */,
+				E5EB8A2AB1880D0B3E896797 /* RemovalModel.swift in Sources */,
+				5B2C656637B82FA760F17840 /* Types.swift in Sources */,
+				C7507012FC7836D11820DD1C /* ZipAdapter.swift in Sources */,
+				F077BF00BCA166993D436133 /* ZipArchive.swift in Sources */,
+				955542B62E51E51B7523DFC9 /* ZipStructure.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin XCBuildConfiguration section */
+		072B2ACD6EED88F2ED9B18E9 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				CLANG_ENABLE_MODULES = YES;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_PREVIEWS = YES;
+				ENABLE_TESTABILITY = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = App/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				MARKETING_VERSION = 1.0.0;
+				ONLY_ACTIVE_ARCH = YES;
+				PRODUCT_BUNDLE_IDENTIFIER = dev.jayanth.filepasswordremover;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		30943A48C2ACE2A5A019BC47 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				CLANG_ENABLE_MODULES = YES;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = App/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				MARKETING_VERSION = 1.0.0;
+				PRODUCT_BUNDLE_IDENTIFIER = dev.jayanth.filepasswordremover;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				VALIDATE_PRODUCT = YES;
+			};
+			name = Release;
+		};
+		A46EAFCC1A4FD55D41F2CEE4 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				CLANG_ENABLE_MODULES = YES;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_PREVIEWS = YES;
+				ENABLE_TESTABILITY = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = App/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				MARKETING_VERSION = 1.0.0;
+				ONLY_ACTIVE_ARCH = YES;
+				PRODUCT_BUNDLE_IDENTIFIER = dev.jayanth.filepasswordremover;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		1CFD542E49F6EEEC2DDC6468 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				CLANG_ENABLE_MODULES = YES;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = App/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				MARKETING_VERSION = 1.0.0;
+				PRODUCT_BUNDLE_IDENTIFIER = dev.jayanth.filepasswordremover;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				VALIDATE_PRODUCT = YES;
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		B2B4ECC9A8CC5D22C95C629A = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				072B2ACD6EED88F2ED9B18E9 /* Debug */,
+				30943A48C2ACE2A5A019BC47 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		FC2D85EAC57C6131A47B1167 = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				A46EAFCC1A4FD55D41F2CEE4 /* Debug */,
+				1CFD542E49F6EEEC2DDC6468 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = 244210E48437B6556980A702 /* Project object */;
+}

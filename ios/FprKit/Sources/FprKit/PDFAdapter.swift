@@ -67,11 +67,23 @@ public struct PDFAdapter: Sendable {
             }
         }
 
-        guard let output = document.dataRepresentation(), !output.isEmpty else {
+        // PDFKit writes the original security handler back out for the older
+        // revisions (R2-R4), so a straight re-save can still be encrypted. Take
+        // it only when re-reading proves it came out clean.
+        if let output = document.dataRepresentation(), !output.isEmpty,
+           let rewritten = PDFDocument(data: output),
+           !rewritten.isLocked, !rewritten.isEncrypted,
+           rewritten.pageCount == document.pageCount {
+            return output
+        }
+
+        let rebuilt = try rebuildWithoutEncryption(document)
+        guard let output = rebuilt.dataRepresentation(), !output.isEmpty else {
             throw FprError.internalError("PDFKit produced no output for this document.")
         }
-        guard let rewritten = PDFDocument(data: output), !rewritten.isLocked else {
-            throw FprError.internalError("The rewritten PDF could not be reopened.")
+        guard let rewritten = PDFDocument(data: output), !rewritten.isLocked, !rewritten.isEncrypted
+        else {
+            throw FprError.internalError("The rewritten PDF is still encrypted.")
         }
         guard rewritten.pageCount == document.pageCount else {
             throw FprError.internalError(
@@ -79,6 +91,32 @@ public struct PDFAdapter: Sendable {
             )
         }
         return output
+    }
+
+    /// Copy the pages into a fresh document, which carries no security handler.
+    ///
+    /// Document attributes and the outline are carried across explicitly.
+    /// Anything PDFKit does not expose at page level -- embedded files, form
+    /// field values, structure tags -- does not survive this path, which is why
+    /// it is only used when a plain re-save comes back still encrypted.
+    private func rebuildWithoutEncryption(_ document: PDFDocument) throws -> PDFDocument {
+        let rebuilt = PDFDocument()
+        for index in 0..<document.pageCount {
+            guard let page = document.page(at: index) else {
+                throw FprError.corruptFile("page \(index + 1) could not be read")
+            }
+            guard let copy = page.copy() as? PDFPage else {
+                throw FprError.internalError("page \(index + 1) could not be copied")
+            }
+            rebuilt.insert(copy, at: index)
+        }
+        if let attributes = document.documentAttributes {
+            rebuilt.documentAttributes = attributes
+        }
+        if let outline = document.outlineRoot {
+            rebuilt.outlineRoot = outline
+        }
+        return rebuilt
     }
 
     public func pageCount(_ data: Data) throws -> Int {
