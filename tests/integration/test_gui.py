@@ -8,7 +8,6 @@ keyboard cannot reach. They are skipped where no display is available.
 from __future__ import annotations
 
 import time
-import tkinter
 from pathlib import Path
 
 import pytest
@@ -183,7 +182,7 @@ def test_every_control_is_reachable_from_the_keyboard(app) -> None:
     for _ in range(60):
         try:
             widget = widget.tk_focusNext()
-        except tkinter.TclError as error:  # pragma: no cover - runner-dependent
+        except tk.TclError as error:  # pragma: no cover - runner-dependent
             # tk_focusNext lives in Tk's focus.tcl and is auto-loaded through
             # Tcl's auto_path. Some Windows CI runners ship a Tk whose auto_path
             # is wrong, so the proc is simply absent and every call fails. That
