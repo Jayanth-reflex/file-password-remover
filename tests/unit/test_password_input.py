@@ -88,57 +88,37 @@ def test_prompt_requires_a_terminal(monkeypatch) -> None:
 
 
 def test_prompt_reads_and_confirms(monkeypatch) -> None:
-    import sys
-
-    class Tty:
-        def isatty(self) -> bool:
-            return True
 
     answers = iter(["typed-in", "typed-in"])
-    monkeypatch.setattr(sys, "stdin", Tty())
+    monkeypatch.setattr(password_input, "stdin_is_interactive", lambda: True)
     monkeypatch.setattr("fpr.cli.password_input.getpass.getpass", lambda _prompt: next(answers))
     with resolve_secret(_args(), confirm=True) as secret, secret.expose() as value:
         assert value == "typed-in"
 
 
 def test_prompt_rejects_a_mismatched_confirmation(monkeypatch) -> None:
-    import sys
-
-    class Tty:
-        def isatty(self) -> bool:
-            return True
 
     answers = iter(["one", "two"])
-    monkeypatch.setattr(sys, "stdin", Tty())
+    monkeypatch.setattr(password_input, "stdin_is_interactive", lambda: True)
     monkeypatch.setattr("fpr.cli.password_input.getpass.getpass", lambda _prompt: next(answers))
     with pytest.raises(UsageError, match="did not match"):
         resolve_secret(_args(), confirm=True)
 
 
 def test_prompt_rejects_an_empty_password(monkeypatch) -> None:
-    import sys
 
-    class Tty:
-        def isatty(self) -> bool:
-            return True
-
-    monkeypatch.setattr(sys, "stdin", Tty())
+    monkeypatch.setattr(password_input, "stdin_is_interactive", lambda: True)
     monkeypatch.setattr("fpr.cli.password_input.getpass.getpass", lambda _prompt: "")
     with pytest.raises(UsageError, match="empty"):
         resolve_secret(_args())
 
 
 def test_cancelling_the_prompt_is_not_a_crash(monkeypatch) -> None:
-    import sys
-
-    class Tty:
-        def isatty(self) -> bool:
-            return True
 
     def cancel(_prompt: str) -> str:
         raise KeyboardInterrupt
 
-    monkeypatch.setattr(sys, "stdin", Tty())
+    monkeypatch.setattr(password_input, "stdin_is_interactive", lambda: True)
     monkeypatch.setattr("fpr.cli.password_input.getpass.getpass", cancel)
     with pytest.raises(UsageError, match="Cancelled"):
         resolve_secret(_args())
