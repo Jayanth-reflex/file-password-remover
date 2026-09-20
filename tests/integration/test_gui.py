@@ -8,9 +8,8 @@ keyboard cannot reach. They are skipped where no display is available.
 from __future__ import annotations
 
 import time
-from pathlib import Path
-
 import tkinter
+from pathlib import Path
 
 import pytest
 
