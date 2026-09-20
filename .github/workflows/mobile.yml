@@ -143,10 +143,12 @@ jobs:
           api-level: 35
           target: google_apis
           arch: x86_64
+          # Kept on one line: a backslash continuation inside this action's
+          # script block is passed through literally, and Gradle then looks for
+          # a task named '\'.
           script: |
             adb push build/vectors /data/local/tmp/fpr-vectors
-            cd android && gradle :app:connectedDebugAndroidTest \
-              -Pandroid.testInstrumentationRunnerArguments.fprVectors=/data/local/tmp/fpr-vectors
+            cd android && gradle :app:connectedDebugAndroidTest -Pandroid.testInstrumentationRunnerArguments.fprVectors=/data/local/tmp/fpr-vectors
 
       - uses: actions/upload-artifact@v4
         if: failure()
