@@ -4,10 +4,12 @@ from __future__ import annotations
 
 import argparse
 import os
+import sys
 from pathlib import Path
 
 import pytest
 
+from fpr.cli import password_input
 from fpr.cli.password_input import add_password_arguments, resolve_secret
 from fpr.errors import UsageError
 
@@ -140,3 +142,49 @@ def test_cancelling_the_prompt_is_not_a_crash(monkeypatch) -> None:
     monkeypatch.setattr("fpr.cli.password_input.getpass.getpass", cancel)
     with pytest.raises(UsageError, match="Cancelled"):
         resolve_secret(_args())
+
+
+# ------------------------------------------- interactive-terminal detection
+def test_a_windows_character_device_is_not_an_interactive_terminal(monkeypatch) -> None:
+    """NUL reports isatty() on Windows; prompting there hangs forever.
+
+    ``getpass`` on Windows reads the console rather than stdin, so a process
+    handed ``NUL`` -- a service, a scheduled task, ``< NUL`` -- would block on
+    input that cannot arrive. Detection must fail closed when it cannot confirm
+    a real console, which is what this asserts on every platform.
+    """
+
+    class CharDevice:
+        def isatty(self) -> bool:
+            return True
+
+        def fileno(self) -> int:
+            return 0
+
+    monkeypatch.setattr(sys, "stdin", CharDevice())
+    monkeypatch.setattr(os, "name", "nt")
+    assert password_input.stdin_is_interactive() is False
+
+
+def test_a_non_tty_is_never_interactive(monkeypatch) -> None:
+    class Pipe:
+        def isatty(self) -> bool:
+            return False
+
+    monkeypatch.setattr(sys, "stdin", Pipe())
+    assert password_input.stdin_is_interactive() is False
+
+
+def test_a_posix_tty_is_interactive(monkeypatch) -> None:
+    class Tty:
+        def isatty(self) -> bool:
+            return True
+
+    monkeypatch.setattr(sys, "stdin", Tty())
+    monkeypatch.setattr(os, "name", "posix")
+    assert password_input.stdin_is_interactive() is True
+
+
+def test_detached_stdin_is_not_interactive(monkeypatch) -> None:
+    monkeypatch.setattr(sys, "stdin", None)
+    assert password_input.stdin_is_interactive() is False

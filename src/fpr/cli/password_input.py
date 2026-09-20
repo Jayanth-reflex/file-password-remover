@@ -31,7 +31,7 @@ from pathlib import Path
 from ..errors import UsageError
 from ..secret import Secret, SecretError
 
-__all__ = ["resolve_secret", "add_password_arguments", "PasswordSource"]
+__all__ = ["resolve_secret", "add_password_arguments", "PasswordSource", "stdin_is_interactive"]
 
 
 class PasswordSource:
@@ -129,8 +129,47 @@ def resolve_secret(
         raise UsageError(str(exc)) from exc
 
 
+def stdin_is_interactive() -> bool:
+    """Whether a human can actually be prompted on this process's stdin.
+
+    ``isatty()`` alone is not enough on Windows. There it is true for any
+    *character device*, and ``NUL`` -- what a service, a scheduled task or a
+    ``< NUL`` redirect supplies -- is a character device. The prompt would then
+    be considered safe to show, and ``getpass`` on Windows reads the console
+    directly rather than stdin, so it blocks forever on input that cannot
+    arrive. ``GetConsoleMode`` succeeds only for a real console handle, which
+    is the distinction that matters.
+    """
+    try:
+        if not sys.stdin or not sys.stdin.isatty():
+            return False
+    except (AttributeError, ValueError):  # detached or closed stdin
+        return False
+
+    if os.name != "nt":
+        return True
+
+    try:  # pragma: no cover - exercised on Windows only
+        import ctypes
+        import msvcrt
+
+        # mypy runs on the Linux CI host, where these Windows-only
+        # attributes do not exist on the stubs.
+        handle = msvcrt.get_osfhandle(sys.stdin.fileno())  # type: ignore[attr-defined]
+        mode = ctypes.c_uint()
+        return bool(
+            ctypes.windll.kernel32.GetConsoleMode(  # type: ignore[attr-defined]
+                ctypes.c_void_p(handle), ctypes.byref(mode)
+            )
+        )
+    except (AttributeError, ImportError, OSError, ValueError):
+        # No console handle we can confirm, so refuse to prompt. Failing
+        # closed here costs a clear usage error; failing open costs a hang.
+        return False
+
+
 def _from_prompt(prompt: str, *, confirm: bool) -> Secret:
-    if not sys.stdin.isatty():
+    if not stdin_is_interactive():
         raise UsageError(
             "No password was supplied and this is not an interactive terminal.",
             remediation="Use --password-fd, --password-file or --password-stdin.",
