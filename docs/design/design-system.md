@@ -101,6 +101,14 @@ Three states, one surface:
    This is a statement of fact, not a promise.
 3. **Cleared** — the hallmark row, and the output.
 
+## Where the platforms differ
+
+Stated here because the interface shows it rather than hiding it: protecting a
+PDF on iOS produces **AES-128 (R4)**, not the AES-256 (R6) the CLI and the
+Android app produce. PDFKit does not expose the encryption revision. The
+hallmark row prints the algorithm for exactly this reason -- the user can see
+what they got, and it is a fact read back out of the file rather than a claim.
+
 ## Quality floor
 
 Not negotiable, and not announced in the UI:

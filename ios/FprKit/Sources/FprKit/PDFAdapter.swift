@@ -121,10 +121,17 @@ public struct PDFAdapter: Sendable {
 
     /// Encrypt with the supplied password.
     ///
-    /// PDFKit's write options set both the user and the owner password. The
-    /// same value is used for both: a separate owner password would be a second
-    /// credential that also opens the file, which is one more thing to lose for
-    /// no benefit here.
+    /// The same value is set as both the user and the owner password: a
+    /// separate owner password would be a second credential that also opens the
+    /// file, which is one more thing to lose for no benefit here.
+    ///
+    /// **This is weaker than the other implementations.** PDFKit exposes no way
+    /// to choose the encryption revision and writes **AES-128 (R4)**, where the
+    /// command-line tool and the Android app both write AES-256 (R6). AES-128
+    /// is not broken, but it is not what the rest of the project produces, so
+    /// the algorithm is reported in the hallmark row rather than being left for
+    /// the user to discover. Matching R6 here would mean writing the PDF
+    /// security handler by hand.
     public func protect(_ data: Data, password: String) throws -> Data {
         guard let document = PDFDocument(data: data) else {
             throw FprError.corruptFile("This file could not be opened as a PDF.")

@@ -46,6 +46,16 @@
     "swift-dependencies" : "/Users/jayanth/Desktop/resume/projects/file-password-remover/ios/FprKit/.build/out/Intermediates.noindex/FprKit.build/Debug/FprKit-t.build/Objects-normal/arm64/Deflate.swiftdeps",
     "swiftmodule" : "/Users/jayanth/Desktop/resume/projects/file-password-remover/ios/FprKit/.build/out/Intermediates.noindex/FprKit.build/Debug/FprKit-t.build/Objects-normal/arm64/Deflate~partial.swiftmodule"
   },
+  "/Users/jayanth/Desktop/resume/projects/file-password-remover/ios/FprKit/Sources/FprKit/DocumentModel.swift" : {
+    "const-values" : "/Users/jayanth/Desktop/resume/projects/file-password-remover/ios/FprKit/.build/out/Intermediates.noindex/FprKit.build/Debug/FprKit-t.build/Objects-normal/arm64/DocumentModel.swiftconstvalues",
+    "dependencies" : "/Users/jayanth/Desktop/resume/projects/file-password-remover/ios/FprKit/.build/out/Intermediates.noindex/FprKit.build/Debug/FprKit-t.build/Objects-normal/arm64/DocumentModel.d",
+    "diagnostics" : "/Users/jayanth/Desktop/resume/projects/file-password-remover/ios/FprKit/.build/out/Intermediates.noindex/FprKit.build/Debug/FprKit-t.build/Objects-normal/arm64/DocumentModel.dia",
+    "index-unit-output-path" : "/FprKit.build/Debug/FprKit-t.build/Objects-normal/arm64/DocumentModel.o",
+    "llvm-bc" : "/Users/jayanth/Desktop/resume/projects/file-password-remover/ios/FprKit/.build/out/Intermediates.noindex/FprKit.build/Debug/FprKit-t.build/Objects-normal/arm64/DocumentModel.bc",
+    "object" : "/Users/jayanth/Desktop/resume/projects/file-password-remover/ios/FprKit/.build/out/Intermediates.noindex/FprKit.build/Debug/FprKit-t.build/Objects-normal/arm64/DocumentModel.o",
+    "swift-dependencies" : "/Users/jayanth/Desktop/resume/projects/file-password-remover/ios/FprKit/.build/out/Intermediates.noindex/FprKit.build/Debug/FprKit-t.build/Objects-normal/arm64/DocumentModel.swiftdeps",
+    "swiftmodule" : "/Users/jayanth/Desktop/resume/projects/file-password-remover/ios/FprKit/.build/out/Intermediates.noindex/FprKit.build/Debug/FprKit-t.build/Objects-normal/arm64/DocumentModel~partial.swiftmodule"
+  },
   "/Users/jayanth/Desktop/resume/projects/file-password-remover/ios/FprKit/Sources/FprKit/Engine.swift" : {
     "const-values" : "/Users/jayanth/Desktop/resume/projects/file-password-remover/ios/FprKit/.build/out/Intermediates.noindex/FprKit.build/Debug/FprKit-t.build/Objects-normal/arm64/Engine.swiftconstvalues",
     "dependencies" : "/Users/jayanth/Desktop/resume/projects/file-password-remover/ios/FprKit/.build/out/Intermediates.noindex/FprKit.build/Debug/FprKit-t.build/Objects-normal/arm64/Engine.d",
@@ -95,16 +105,6 @@
     "object" : "/Users/jayanth/Desktop/resume/projects/file-password-remover/ios/FprKit/.build/out/Intermediates.noindex/FprKit.build/Debug/FprKit-t.build/Objects-normal/arm64/PasswordGenerator.o",
     "swift-dependencies" : "/Users/jayanth/Desktop/resume/projects/file-password-remover/ios/FprKit/.build/out/Intermediates.noindex/FprKit.build/Debug/FprKit-t.build/Objects-normal/arm64/PasswordGenerator.swiftdeps",
     "swiftmodule" : "/Users/jayanth/Desktop/resume/projects/file-password-remover/ios/FprKit/.build/out/Intermediates.noindex/FprKit.build/Debug/FprKit-t.build/Objects-normal/arm64/PasswordGenerator~partial.swiftmodule"
-  },
-  "/Users/jayanth/Desktop/resume/projects/file-password-remover/ios/FprKit/Sources/FprKit/RemovalModel.swift" : {
-    "const-values" : "/Users/jayanth/Desktop/resume/projects/file-password-remover/ios/FprKit/.build/out/Intermediates.noindex/FprKit.build/Debug/FprKit-t.build/Objects-normal/arm64/RemovalModel.swiftconstvalues",
-    "dependencies" : "/Users/jayanth/Desktop/resume/projects/file-password-remover/ios/FprKit/.build/out/Intermediates.noindex/FprKit.build/Debug/FprKit-t.build/Objects-normal/arm64/RemovalModel.d",
-    "diagnostics" : "/Users/jayanth/Desktop/resume/projects/file-password-remover/ios/FprKit/.build/out/Intermediates.noindex/FprKit.build/Debug/FprKit-t.build/Objects-normal/arm64/RemovalModel.dia",
-    "index-unit-output-path" : "/FprKit.build/Debug/FprKit-t.build/Objects-normal/arm64/RemovalModel.o",
-    "llvm-bc" : "/Users/jayanth/Desktop/resume/projects/file-password-remover/ios/FprKit/.build/out/Intermediates.noindex/FprKit.build/Debug/FprKit-t.build/Objects-normal/arm64/RemovalModel.bc",
-    "object" : "/Users/jayanth/Desktop/resume/projects/file-password-remover/ios/FprKit/.build/out/Intermediates.noindex/FprKit.build/Debug/FprKit-t.build/Objects-normal/arm64/RemovalModel.o",
-    "swift-dependencies" : "/Users/jayanth/Desktop/resume/projects/file-password-remover/ios/FprKit/.build/out/Intermediates.noindex/FprKit.build/Debug/FprKit-t.build/Objects-normal/arm64/RemovalModel.swiftdeps",
-    "swiftmodule" : "/Users/jayanth/Desktop/resume/projects/file-password-remover/ios/FprKit/.build/out/Intermediates.noindex/FprKit.build/Debug/FprKit-t.build/Objects-normal/arm64/RemovalModel~partial.swiftmodule"
   },
   "/Users/jayanth/Desktop/resume/projects/file-password-remover/ios/FprKit/Sources/FprKit/Types.swift" : {
     "const-values" : "/Users/jayanth/Desktop/resume/projects/file-password-remover/ios/FprKit/.build/out/Intermediates.noindex/FprKit.build/Debug/FprKit-t.build/Objects-normal/arm64/Types.swiftconstvalues",

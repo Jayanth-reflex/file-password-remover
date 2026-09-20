@@ -5,11 +5,11 @@
       "name" : "FprKit",
       "path" : "/Users/jayanth/Desktop/resume/projects/file-password-remover/ios/FprKit",
       "projects" : [
-        "918220e1a4dbf5eb2e545ccd5b4e5310373514ad111509dbab0d4953b64e7b0f",
+        "aae4efb569449a187fb4687e23fef62c3e5ff84c41ac625cceb506883249ad4b",
         "aa1f693dcbc5ef6135ec72eb0749087663128509aae9fd2641e6f1bc95ac38c4"
       ]
     },
-    "signature" : "0f8c407e82275cca5a57245b8ececa1298d85622bcd674c45617a4a198fdd245",
+    "signature" : "f3052c4819ab1def6020823be4b88bfc5b06c29808723ee544698823f545f55b",
     "type" : "workspace"
   },
   {
@@ -207,6 +207,14 @@
               {
                 "fileType" : "sourcecode.swift",
                 "guid" : "PACKAGE:fprkit::MAINGROUP::REF_2::REF_0",
+                "name" : "DocumentModelTests.swift",
+                "path" : "DocumentModelTests.swift",
+                "sourceTree" : "<group>",
+                "type" : "file"
+              },
+              {
+                "fileType" : "sourcecode.swift",
+                "guid" : "PACKAGE:fprkit::MAINGROUP::REF_2::REF_1",
                 "name" : "EngineTests.swift",
                 "path" : "EngineTests.swift",
                 "sourceTree" : "<group>",
@@ -214,7 +222,7 @@
               },
               {
                 "fileType" : "sourcecode.swift",
-                "guid" : "PACKAGE:fprkit::MAINGROUP::REF_2::REF_1",
+                "guid" : "PACKAGE:fprkit::MAINGROUP::REF_2::REF_2",
                 "name" : "LegacyOfficeAdapterTests.swift",
                 "path" : "LegacyOfficeAdapterTests.swift",
                 "sourceTree" : "<group>",
@@ -222,7 +230,7 @@
               },
               {
                 "fileType" : "sourcecode.swift",
-                "guid" : "PACKAGE:fprkit::MAINGROUP::REF_2::REF_2",
+                "guid" : "PACKAGE:fprkit::MAINGROUP::REF_2::REF_3",
                 "name" : "OOXMLAdapterTests.swift",
                 "path" : "OOXMLAdapterTests.swift",
                 "sourceTree" : "<group>",
@@ -230,7 +238,7 @@
               },
               {
                 "fileType" : "sourcecode.swift",
-                "guid" : "PACKAGE:fprkit::MAINGROUP::REF_2::REF_3",
+                "guid" : "PACKAGE:fprkit::MAINGROUP::REF_2::REF_4",
                 "name" : "PDFAdapterTests.swift",
                 "path" : "PDFAdapterTests.swift",
                 "sourceTree" : "<group>",
@@ -238,17 +246,9 @@
               },
               {
                 "fileType" : "sourcecode.swift",
-                "guid" : "PACKAGE:fprkit::MAINGROUP::REF_2::REF_4",
+                "guid" : "PACKAGE:fprkit::MAINGROUP::REF_2::REF_5",
                 "name" : "ProtectTests.swift",
                 "path" : "ProtectTests.swift",
-                "sourceTree" : "<group>",
-                "type" : "file"
-              },
-              {
-                "fileType" : "sourcecode.swift",
-                "guid" : "PACKAGE:fprkit::MAINGROUP::REF_2::REF_5",
-                "name" : "RemovalModelTests.swift",
-                "path" : "RemovalModelTests.swift",
                 "sourceTree" : "<group>",
                 "type" : "file"
               },
@@ -320,6 +320,14 @@
               {
                 "fileType" : "sourcecode.swift",
                 "guid" : "PACKAGE:fprkit::MAINGROUP::REF_3::REF_4",
+                "name" : "DocumentModel.swift",
+                "path" : "DocumentModel.swift",
+                "sourceTree" : "<group>",
+                "type" : "file"
+              },
+              {
+                "fileType" : "sourcecode.swift",
+                "guid" : "PACKAGE:fprkit::MAINGROUP::REF_3::REF_5",
                 "name" : "Engine.swift",
                 "path" : "Engine.swift",
                 "sourceTree" : "<group>",
@@ -327,7 +335,7 @@
               },
               {
                 "fileType" : "sourcecode.swift",
-                "guid" : "PACKAGE:fprkit::MAINGROUP::REF_3::REF_5",
+                "guid" : "PACKAGE:fprkit::MAINGROUP::REF_3::REF_6",
                 "name" : "LegacyOfficeAdapter.swift",
                 "path" : "LegacyOfficeAdapter.swift",
                 "sourceTree" : "<group>",
@@ -335,7 +343,7 @@
               },
               {
                 "fileType" : "sourcecode.swift",
-                "guid" : "PACKAGE:fprkit::MAINGROUP::REF_3::REF_6",
+                "guid" : "PACKAGE:fprkit::MAINGROUP::REF_3::REF_7",
                 "name" : "OOXMLAdapter.swift",
                 "path" : "OOXMLAdapter.swift",
                 "sourceTree" : "<group>",
@@ -343,7 +351,7 @@
               },
               {
                 "fileType" : "sourcecode.swift",
-                "guid" : "PACKAGE:fprkit::MAINGROUP::REF_3::REF_7",
+                "guid" : "PACKAGE:fprkit::MAINGROUP::REF_3::REF_8",
                 "name" : "PDFAdapter.swift",
                 "path" : "PDFAdapter.swift",
                 "sourceTree" : "<group>",
@@ -351,17 +359,9 @@
               },
               {
                 "fileType" : "sourcecode.swift",
-                "guid" : "PACKAGE:fprkit::MAINGROUP::REF_3::REF_8",
+                "guid" : "PACKAGE:fprkit::MAINGROUP::REF_3::REF_9",
                 "name" : "PasswordGenerator.swift",
                 "path" : "PasswordGenerator.swift",
-                "sourceTree" : "<group>",
-                "type" : "file"
-              },
-              {
-                "fileType" : "sourcecode.swift",
-                "guid" : "PACKAGE:fprkit::MAINGROUP::REF_3::REF_9",
-                "name" : "RemovalModel.swift",
-                "path" : "RemovalModel.swift",
                 "sourceTree" : "<group>",
                 "type" : "file"
               },
@@ -441,6 +441,14 @@
               {
                 "fileType" : "sourcecode.swift",
                 "guid" : "PACKAGE:fprkit::MAINGROUP::REF_4::REF_4",
+                "name" : "DocumentModel.swift",
+                "path" : "DocumentModel.swift",
+                "sourceTree" : "<group>",
+                "type" : "file"
+              },
+              {
+                "fileType" : "sourcecode.swift",
+                "guid" : "PACKAGE:fprkit::MAINGROUP::REF_4::REF_5",
                 "name" : "Engine.swift",
                 "path" : "Engine.swift",
                 "sourceTree" : "<group>",
@@ -448,7 +456,7 @@
               },
               {
                 "fileType" : "sourcecode.swift",
-                "guid" : "PACKAGE:fprkit::MAINGROUP::REF_4::REF_5",
+                "guid" : "PACKAGE:fprkit::MAINGROUP::REF_4::REF_6",
                 "name" : "LegacyOfficeAdapter.swift",
                 "path" : "LegacyOfficeAdapter.swift",
                 "sourceTree" : "<group>",
@@ -456,7 +464,7 @@
               },
               {
                 "fileType" : "sourcecode.swift",
-                "guid" : "PACKAGE:fprkit::MAINGROUP::REF_4::REF_6",
+                "guid" : "PACKAGE:fprkit::MAINGROUP::REF_4::REF_7",
                 "name" : "OOXMLAdapter.swift",
                 "path" : "OOXMLAdapter.swift",
                 "sourceTree" : "<group>",
@@ -464,7 +472,7 @@
               },
               {
                 "fileType" : "sourcecode.swift",
-                "guid" : "PACKAGE:fprkit::MAINGROUP::REF_4::REF_7",
+                "guid" : "PACKAGE:fprkit::MAINGROUP::REF_4::REF_8",
                 "name" : "PDFAdapter.swift",
                 "path" : "PDFAdapter.swift",
                 "sourceTree" : "<group>",
@@ -472,17 +480,9 @@
               },
               {
                 "fileType" : "sourcecode.swift",
-                "guid" : "PACKAGE:fprkit::MAINGROUP::REF_4::REF_8",
+                "guid" : "PACKAGE:fprkit::MAINGROUP::REF_4::REF_9",
                 "name" : "PasswordGenerator.swift",
                 "path" : "PasswordGenerator.swift",
-                "sourceTree" : "<group>",
-                "type" : "file"
-              },
-              {
-                "fileType" : "sourcecode.swift",
-                "guid" : "PACKAGE:fprkit::MAINGROUP::REF_4::REF_9",
-                "name" : "RemovalModel.swift",
-                "path" : "RemovalModel.swift",
                 "sourceTree" : "<group>",
                 "type" : "file"
               },
@@ -546,7 +546,7 @@
         "19cad067ee38de68034f652bd0645ab58c4388f1482144b748df1fb441310e1f"
       ]
     },
-    "signature" : "918220e1a4dbf5eb2e545ccd5b4e5310373514ad111509dbab0d4953b64e7b0f",
+    "signature" : "aae4efb569449a187fb4687e23fef62c3e5ff84c41ac625cceb506883249ad4b",
     "type" : "project"
   },
   {
