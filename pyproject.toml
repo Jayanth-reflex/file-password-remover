@@ -127,6 +127,10 @@ ignore_missing_imports = true
 minversion = "8.0"
 testpaths = ["tests"]
 addopts = "-ra --strict-markers --strict-config"
+# Dump every thread's stack if a single test runs this long, then abort.
+# A hung test used to mean a silent CI job killed at the 20-minute limit
+# with no output at all; this turns that into a traceback naming the test.
+faulthandler_timeout = 300
 markers = [
   "slow: performance / large-file tests (deselect with -m 'not slow')",
   "sevenzip: requires the optional py7zr extra",
