@@ -37,6 +37,13 @@ jobs:
         working-directory: ios/FprKit
         run: swift test --parallel
 
+      # The Swift suite writes protected files to build/interop. Opening them
+      # with the Python implementation is the only evidence that the encryptor
+      # produces something other implementations can read -- a self round trip
+      # would pass even if the key schedule were symmetrically wrong.
+      - name: Files Swift protected must open in the Python implementation
+        run: python scripts/check_interop.py build/interop
+
       - name: Check the Xcode project is in sync with its generator
         run: |
           python scripts/gen_xcodeproj.py
@@ -86,6 +93,9 @@ jobs:
       - name: Engine tests
         working-directory: android
         run: gradle :fprkit:test
+
+      - name: Files Kotlin protected must open in the Python implementation
+        run: python scripts/check_interop.py build/interop
 
       - name: Build the APK
         working-directory: android

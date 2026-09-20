@@ -90,7 +90,7 @@ def test_remove_with_password_file(pdf_encrypted: Path, tmp_path: Path, capsys) 
     code = main(["remove", str(pdf_encrypted), "--password-file", str(pwfile)])
     assert code == ExitCode.OK
     assert (pdf_encrypted.parent / "secret-unprotected.pdf").exists()
-    assert "verified" in capsys.readouterr().out
+    assert "VERIFIED" in capsys.readouterr().out
 
 
 def test_remove_json_output(pdf_encrypted: Path, tmp_path: Path, capsys) -> None:

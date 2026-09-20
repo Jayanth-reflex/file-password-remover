@@ -1,4 +1,0 @@
-module FprKit {
-header "FprKit-Swift.h"
-export *
-}

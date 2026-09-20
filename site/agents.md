@@ -123,6 +123,57 @@ argument. If your tool-calling framework only supports passing a fixed argv
 list without stdin, use `--password-file` against a temp file you create with
 mode `0600` and delete immediately after.
 
+## Adding protection
+
+`fpr protect` locks a file that has no password yet. It is the inverse of
+`remove`, and the rules are stricter because a generated password is the only
+copy that will ever exist -- this tool refuses to crack, so losing it destroys
+the file.
+
+```bash
+fpr --json protect notes.pdf --generate
+```
+
+The generated password comes back in the JSON, because an agent that cannot
+read it back has destroyed the file it just made:
+
+```json
+{
+  "ok": true,
+  "output": "/abs/path/notes-protected.pdf",
+  "protection_applied": "user-password",
+  "algorithm": "AES-256 (PDF 2.0, R6)",
+  "verification": {
+    "encrypted": "true",
+    "opens": "true",
+    "pages": "3",
+    "content_digest": "456cf7bce5ff12ef"
+  },
+  "generated_password": "w5zd-mzy4-d6g8-s4g5-npvk"
+}
+```
+
+**Store `generated_password` before you do anything else.** Use
+`--password-out FILE` to have it written to a `0600` file instead of stdout if
+your transcript is logged.
+
+To set a password the user chose, pipe it in as usual -- it is not echoed back:
+
+```bash
+printf '%s' "$PASSWORD" | fpr --json protect notes.pdf --password-stdin
+```
+
+What it refuses, and why arguing will not help:
+
+- **More than one file per run.** A batch of generated passwords is how people
+  lose them.
+- **An already-encrypted file.** Nesting two passwords means two things to lose.
+  Remove the existing protection first.
+- **Writing over the original.** There is no in-place mode. If the only key were
+  lost, the file would be gone.
+- **Formats other than PDF and ZIP.** Office and 7-Zip can be *opened* but not
+  locked. The refusal says so; do not fall back to writing an unencrypted copy.
+
 ## Exit codes — branch on these, not on stdout text
 
 | Code | Name | Meaning |

@@ -1,7 +1,8 @@
 # File Password Remover
 
-> Local CLI/desktop tool that removes password protection from PDF, Office,
-> ZIP and 7-Zip files after the correct password is supplied. No network
+> Local CLI/desktop/mobile tool that removes password protection from PDF,
+> Office, ZIP and 7-Zip files after the correct password is supplied, and adds
+> protection to PDF and ZIP files. No network
 > code, no uploads, no password/dictionary attacks. Output is verified by
 > re-reading it from disk before success is reported.
 
@@ -15,6 +16,9 @@ codes, refusal cases): /agents.md
 - No `--password VALUE` flag exists, on purpose (shell history / `ps`
   exposure). Use `--password-stdin`, `--password-fd N`, or `--password-file`.
 - `--json` on every command gives structured, machine-parseable output.
+- `fpr protect FILE --generate` adds a password (PDF and ZIP only) and returns
+  it as `generated_password`. It is the only copy that will ever exist; store it
+  before doing anything else. No in-place mode, one file per run.
 - Success is reported only after the written file is re-opened from disk and
   its content invariants (page counts, content digests) are checked against
   the input — see the `verification` object in `remove --json` output.

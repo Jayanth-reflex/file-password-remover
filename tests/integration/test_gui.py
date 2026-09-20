@@ -7,6 +7,7 @@ keyboard cannot reach. They are skipped where no display is available.
 
 from __future__ import annotations
 
+import re
 import time
 from pathlib import Path
 
@@ -76,6 +77,22 @@ def test_planned_output_is_shown_before_anything_is_written(app, pdf_encrypted: 
     assert not (pdf_encrypted.parent / "secret-unprotected.pdf").exists()
 
 
+def _hallmark(app) -> dict[str, str]:
+    """Read the hallmark row back as {caption: value}.
+
+    Captions are letter-spaced with thin spaces for display, which is stripped
+    here so tests assert on the word rather than the typography.
+    """
+    labels = [
+        child.cget("text")
+        for child in app.hallmark.winfo_children()
+        if child.winfo_class() == "TLabel"
+    ]
+    cleaned = [text.replace("\u2009", "") for text in labels]
+    # Built column by column, so children interleave caption, value, caption...
+    return dict(zip(cleaned[0::2], cleaned[1::2], strict=False))
+
+
 def test_a_successful_run_reports_the_verification_evidence(app, pdf_encrypted: Path) -> None:
     from ..conftest import SAMPLE_PASSWORD
 
@@ -86,9 +103,30 @@ def test_a_successful_run_reports_the_verification_evidence(app, pdf_encrypted: 
     _settle(app)
     status = app.status.cget("text")
     assert "Verified" in status
-    assert "encrypted=false" in status
     assert "original file was not changed" in status
     assert (pdf_encrypted.parent / "secret-unprotected.pdf").exists()
+
+    # The evidence itself lives in the hallmark row, not buried in the status
+    # sentence -- see docs/design/design-system.md.
+    marks = _hallmark(app)
+    assert marks["ENCRYPTED"] == "false"
+    assert marks["PAGES"] == "3"
+
+
+def test_the_hallmark_is_cleared_when_another_file_is_loaded(app, pdf_encrypted: Path) -> None:
+    """Stale evidence must never sit under a different file."""
+    from ..conftest import SAMPLE_PASSWORD
+
+    app.load(pdf_encrypted)
+    _settle(app)
+    app.password_var.set(SAMPLE_PASSWORD)
+    app.on_run()
+    _settle(app)
+    assert _hallmark(app), "expected evidence after a successful run"
+
+    app.load(pdf_encrypted)
+    _settle(app)
+    assert _hallmark(app) == {}, "evidence from the previous run is still on screen"
 
 
 def test_the_password_field_is_cleared_as_soon_as_the_run_starts(app, pdf_encrypted) -> None:
@@ -216,3 +254,56 @@ def test_no_state_is_conveyed_by_colour_alone(app, pdf_restricted: Path) -> None
 def test_window_has_a_usable_minimum_size(app) -> None:
     width, height = app.root.minsize()
     assert width >= 600 and height >= 480
+
+
+# ------------------------------------------------------------------ protect
+def test_an_unprotected_file_offers_to_be_protected(app, pdf_plain: Path) -> None:
+    app.load(pdf_plain)
+    _settle(app)
+
+    assert app.available == "protect"
+    assert app.run_button.cget("text") == "Protect this file"
+
+
+def test_a_protected_file_offers_to_be_opened(app, pdf_encrypted: Path) -> None:
+    app.load(pdf_encrypted)
+    _settle(app)
+
+    assert app.available == "remove"
+    assert app.run_button.cget("text") == "Remove protection"
+
+
+def test_protecting_shows_the_generated_password_once(app, pdf_plain: Path) -> None:
+    """The only copy that will ever exist has to reach the user."""
+    app.load(pdf_plain)
+    _settle(app)
+    app.generate_var.set(True)
+
+    app.on_run()
+    _settle(app)
+
+    shown = app.generated_label.cget("text")
+    assert re.fullmatch(r"[a-z0-9]{4}(-[a-z0-9]{4}){4}", shown), f"not a password: {shown!r}"
+    assert (pdf_plain.parent / "plain-protected.pdf").exists()
+
+    # And it is genuinely the password that opens it.
+    from fpr import RemovalOptions, Secret, remove
+
+    remove(
+        pdf_plain.parent / "plain-protected.pdf",
+        Secret.from_text(shown),
+        RemovalOptions(output=pdf_plain.parent / "back.pdf"),
+    )
+
+
+def test_a_password_the_user_chose_is_not_echoed(app, pdf_plain: Path) -> None:
+    app.load(pdf_plain)
+    _settle(app)
+    app.generate_var.set(False)
+    app.password_var.set("a-password-i-chose")
+
+    app.on_run()
+    _settle(app)
+
+    assert app.generated_label.cget("text") == ""
+    assert "a-password-i-chose" not in app.status.cget("text")

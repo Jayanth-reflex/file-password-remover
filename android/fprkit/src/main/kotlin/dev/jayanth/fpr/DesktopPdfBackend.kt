@@ -3,7 +3,9 @@ package dev.jayanth.fpr
 import java.io.ByteArrayOutputStream
 import org.apache.pdfbox.Loader
 import org.apache.pdfbox.pdmodel.PDDocument
+import org.apache.pdfbox.pdmodel.encryption.AccessPermission
 import org.apache.pdfbox.pdmodel.encryption.InvalidPasswordException
+import org.apache.pdfbox.pdmodel.encryption.StandardProtectionPolicy
 
 /**
  * Desktop PDFBox binding, used by the JVM tests and anywhere the engine runs
@@ -27,6 +29,13 @@ class DesktopPdfBackend : PdfBackend {
 
         override fun saveDecrypted(): ByteArray {
             document.isAllSecurityToBeRemoved = true
+            return ByteArrayOutputStream().also { document.save(it) }.toByteArray()
+        }
+
+        override fun saveEncrypted(password: String): ByteArray {
+            val policy = StandardProtectionPolicy(password, password, AccessPermission())
+            policy.encryptionKeyLength = 256
+            document.protect(policy)
             return ByteArrayOutputStream().also { document.save(it) }.toByteArray()
         }
 

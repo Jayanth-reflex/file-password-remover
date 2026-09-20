@@ -18,6 +18,9 @@ interface PdfBackend {
         val deniedPermissions: List<String>
         /** Re-save with the security handler removed. */
         fun saveDecrypted(): ByteArray
+
+        /** Re-save encrypted with [password], as both user and owner password. */
+        fun saveEncrypted(password: String): ByteArray
     }
 
     /**

@@ -79,6 +79,44 @@ class PdfAdapter(private val backend: PdfBackend = PdfBackends.current()) {
         }
     }
 
+    /**
+     * Encrypt with AES-256, the strongest the PDF specification defines.
+     *
+     * The same password is set as both the user and the owner password: a
+     * separate owner password would be a second credential that also opens the
+     * file, which is one more thing to lose for no benefit here.
+     */
+    fun protect(data: ByteArray, password: String): ByteArray {
+        val detection = detect(data)
+        if (detection.protection != Protection.NONE) {
+            throw FprException.PolicyRefused(
+                "This PDF is already encrypted. Remove the existing protection first."
+            )
+        }
+
+        val (pagesIn, bytes) = backend.open(data, null).use { document ->
+            document.pageCount to document.saveEncrypted(password)
+        }
+
+        // Verify before returning: it must refuse an empty password, and open
+        // with the real one holding the same pages.
+        try {
+            backend.open(bytes, null).use {
+                throw FprException.InternalError("The written PDF is not password protected.")
+            }
+        } catch (expected: FprException.WrongPassword) {
+            // Good: it will not open without the password.
+        }
+        backend.open(bytes, password).use { locked ->
+            if (locked.pageCount != pagesIn) {
+                throw FprException.InternalError(
+                    "Page count changed: $pagesIn in, ${locked.pageCount} out."
+                )
+            }
+        }
+        return bytes
+    }
+
     fun pageCount(data: ByteArray): Int = backend.open(data, null).use { it.pageCount }
 
     /** Report the encryption revision, which PDFBox does not surface directly. */

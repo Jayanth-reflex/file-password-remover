@@ -3,6 +3,56 @@ package dev.jayanth.fpr
 /** ZIP archives: WinZip AES (AE-1/AE-2) and legacy PKWARE ZipCrypto. */
 class ZipAdapter {
 
+    /**
+     * Rewrite the archive with every entry under WinZip AES-256.
+     *
+     * Entries are re-deflated rather than copied: AE-2 encrypts the
+     * *compressed* bytes and zeroes the CRC in the header, so nothing from the
+     * original entry can be reused as-is.
+     */
+    fun protect(data: ByteArray, password: String): ByteArray {
+        val entries = ZipArchive.readCentralDirectory(data)
+        if (entries.any { it.isEncrypted }) {
+            throw FprException.PolicyRefused(
+                "This ZIP is already encrypted. Remove the existing protection first."
+            )
+        }
+        val passwordBytes = password.toByteArray(Charsets.UTF_8)
+
+        val protected = entries.map { entry ->
+            val stored = ZipArchive.payload(data, entry)
+            val plaintext =
+                ZipArchive.decompress(stored, entry.method, entry.uncompressedSize.toInt())
+            val isDirectory = entry.name.endsWith("/")
+            val compressed = if (isDirectory) ByteArray(0) else ZipArchive.deflate(plaintext)
+            val encrypted =
+                if (isDirectory) ByteArray(0) else encryptAes(compressed, passwordBytes)
+            ProtectedEntry(
+                entry = entry,
+                payload = encrypted,
+                plaintextSize = plaintext.size,
+                isDirectory = isDirectory,
+            )
+        }
+        return ZipArchive.writeProtected(protected)
+    }
+
+    /** salt | password verifier | ciphertext | truncated HMAC, per the AE spec. */
+    private fun encryptAes(plaintext: ByteArray, password: ByteArray): ByteArray {
+        val keyLength = 32 // AES-256
+        val salt = ByteArray(16).also { java.security.SecureRandom().nextBytes(it) }
+
+        val derived = Crypto.pbkdf2Sha1(password, salt, 1000, keyLength * 2 + 2)
+        val encryptionKey = derived.copyOfRange(0, keyLength)
+        val authenticationKey = derived.copyOfRange(keyLength, keyLength * 2)
+        val verifier = derived.copyOfRange(keyLength * 2, keyLength * 2 + 2)
+
+        val ciphertext = Crypto.winZipAesCrypt(plaintext, encryptionKey)
+        val mac = Crypto.hmacSha1(ciphertext, authenticationKey).copyOfRange(0, 10)
+
+        return salt + verifier + ciphertext + mac
+    }
+
     fun detect(data: ByteArray): Detection {
         val entries = ZipArchive.readCentralDirectory(data)
         val encrypted = entries.filter { it.isEncrypted }

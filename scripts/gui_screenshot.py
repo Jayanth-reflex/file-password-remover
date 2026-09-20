@@ -25,16 +25,23 @@ from fpr_gui.app import App  # noqa: E402
 def main() -> int:
     args = [a for a in sys.argv[1:] if not a.startswith("--")]
     completed = "--completed" in sys.argv
+    protected = "--protected" in sys.argv
     target = Path(args[0] if args else "artifacts/gui.png")
     target.parent.mkdir(parents=True, exist_ok=True)
 
     sample_dir = target.parent / "gui-sample"
     sample_dir.mkdir(exist_ok=True)
     sample = sample_dir / "quarterly-report.pdf"
-    for stale in sample_dir.glob("*-unprotected.pdf"):
+    for stale in list(sample_dir.glob("*-unprotected.pdf")) + list(
+        sample_dir.glob("*-protected.pdf")
+    ):
         stale.unlink()
+    # The protect shot needs a file with nothing on it yet; the others need one
+    # that is actually locked.
     sample.write_bytes(
-        F.make_pdf(F.PdfSpec(pages=12, user="screenshot-demo", owner="screenshot-owner"))
+        F.make_pdf(F.PdfSpec(pages=12))
+        if protected
+        else F.make_pdf(F.PdfSpec(pages=12, user="screenshot-demo", owner="screenshot-owner"))
     )
 
     root = tk.Tk()
@@ -45,6 +52,16 @@ def main() -> int:
     while time.monotonic() < deadline and app.busy:
         root.update()
         time.sleep(0.02)
+
+    if protected:
+        # Drive a real protect run, so the generated password on screen is one
+        # the tool actually produced and the hallmark row is real evidence.
+        app.generate_var.set(True)
+        app.on_run()
+        deadline = time.monotonic() + 30
+        while time.monotonic() < deadline and app.busy:
+            root.update()
+            time.sleep(0.02)
 
     if completed:
         # Drive a real removal so the window shows the verification evidence
