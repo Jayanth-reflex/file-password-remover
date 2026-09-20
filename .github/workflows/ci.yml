@@ -24,6 +24,7 @@ jobs:
   lint:
     name: lint + types
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -43,6 +44,8 @@ jobs:
   test:
     name: test ${{ matrix.os }} py${{ matrix.python }}
     runs-on: ${{ matrix.os }}
+    # A hung test should fail in minutes, not burn the job's six-hour ceiling.
+    timeout-minutes: 20
     strategy:
       fail-fast: false
       matrix:
@@ -66,13 +69,18 @@ jobs:
         run: sudo apt-get update && sudo apt-get install -y python3-tk xvfb
       - run: pip install -e ".[dev,sevenzip]"
       - name: Run tests
+        # -m "not slow": the performance suite writes and encrypts 200 MiB, which
+        # is seconds on a fast local disk and many minutes on a hosted Windows
+        # runner. Running it in all eight matrix jobs made the matrix hang
+        # rather than fail. It has its own job, below, on one runner.
+        #
         # The GUI tests need a display; xvfb provides one on Linux, and macOS
         # and Windows runners have one. Tests skip themselves if Tk cannot open.
         run: |
           if [ "$RUNNER_OS" = "Linux" ]; then
-            xvfb-run -a python -m pytest -q --cov=fpr --cov=fpr_gui --cov-report=xml
+            xvfb-run -a python -m pytest -q -m "not slow" --cov=fpr --cov=fpr_gui --cov-report=xml
           else
-            python -m pytest -q --cov=fpr --cov=fpr_gui --cov-report=xml
+            python -m pytest -q -m "not slow" --cov=fpr --cov=fpr_gui --cov-report=xml
           fi
         shell: bash
       - name: Upload coverage
@@ -85,6 +93,7 @@ jobs:
   no-extras:
     name: default install has no optional extra
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -107,6 +116,7 @@ jobs:
   slow:
     name: performance tests
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -119,6 +129,7 @@ jobs:
   package:
     name: build and verify the wheel
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5

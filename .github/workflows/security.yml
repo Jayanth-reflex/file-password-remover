@@ -15,6 +15,7 @@ permissions:
 
 jobs:
   static-analysis:
+    timeout-minutes: 20
     name: bandit
     runs-on: ubuntu-latest
     steps:
@@ -36,6 +37,7 @@ jobs:
           path: bandit.json
 
   dependencies:
+    timeout-minutes: 20
     name: vulnerable dependencies
     runs-on: ubuntu-latest
     steps:
@@ -62,6 +64,7 @@ jobs:
           path: docs/research/evidence/*.json
 
   secrets:
+    timeout-minutes: 20
     name: secret scanning
     runs-on: ubuntu-latest
     steps:
@@ -77,6 +80,7 @@ jobs:
           GITLEAKS_CONFIG: ${{ github.workspace }}/.gitleaks.toml
 
   policy:
+    timeout-minutes: 20
     name: policy and privacy invariants
     runs-on: ubuntu-latest
     steps:
