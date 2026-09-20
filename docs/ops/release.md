@@ -31,6 +31,22 @@ Then the paperwork, which is part of the release and not an afterthought:
       the rows that say *not built*
 - [ ] `make docs-check` passes
 
+### Dry-run the artifact pipeline first
+
+Running the release workflow by hand builds the wheel and all three desktop
+bundles and smoke-tests each one, without creating anything public — the
+publish job requires a tag, so a manual run skips it.
+
+```bash
+gh workflow run release.yml --ref main
+gh run watch "$(gh run list --workflow=release.yml --limit 1 --json databaseId --jq '.[0].databaseId')"
+```
+
+Do this before tagging. Discovering that the Windows bundle job is broken
+halfway through a release is worse than spending ten minutes proving it is not.
+
+### Then tag
+
 ```bash
 git tag -a v1.0.0 -m "1.0.0"
 git push origin v1.0.0

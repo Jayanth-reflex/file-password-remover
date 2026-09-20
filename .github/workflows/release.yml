@@ -3,11 +3,9 @@ name: Release
 on:
   push:
     tags: ["v*"]
+  # Manual runs are a dry run of the artifact pipeline: everything is built and
+  # smoke-tested, and the publish job is skipped because it requires a tag.
   workflow_dispatch:
-    inputs:
-      tag:
-        description: "Tag to build (e.g. v1.0.0)"
-        required: true
 
 permissions:
   contents: write
@@ -100,6 +98,12 @@ jobs:
     needs: [sdist-wheel, bundles]
     runs-on: ubuntu-latest
     timeout-minutes: 20
+    # Only a tag produces a release. Running this workflow by hand is therefore
+    # a dry run: it builds the wheel and all three desktop bundles and
+    # smoke-tests each one, without creating anything public. Use it to prove
+    # the pipeline works before tagging, rather than discovering a broken
+    # bundle job from a half-finished release.
+    if: startsWith(github.ref, 'refs/tags/v')
     steps:
       - uses: actions/checkout@v4
       - uses: actions/download-artifact@v4
