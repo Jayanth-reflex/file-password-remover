@@ -306,6 +306,43 @@ stack, rather than a silent job killed at the limit.
 present is the intended behaviour. The defect was entirely in what the tests
 assumed about their environment.
 
+### 15.9 `isatty()` is true for NUL on Windows
+
+**Found**: with 15.8 fixed, Windows stopped hanging and *reported*:
+`test_no_password_and_no_tty_is_a_usage_error - subprocess.TimeoutExpired`.
+The child had `NUL` on stdin and still decided a human was present.
+
+Windows' `isatty()` is true for any **character device**, and `NUL` is one. The
+guard in `_from_prompt` therefore passed, and `getpass` on Windows reads the
+console rather than stdin, so it blocked on input that could never arrive.
+
+**A product defect, not a test one.** Any non-interactive Windows context that
+supplies `NUL` -- a service, a scheduled task, a `< NUL` redirect, a CI step --
+would hang instead of receiving the usage error.
+
+**Fix**: `stdin_is_interactive()` keeps `isatty()` as a fast negative and then
+confirms a real console with `GetConsoleMode`, which fails for `NUL`. It fails
+closed on any error, because a clear usage error costs a flag and a hang costs
+the process. Covered on every platform by faking `os.name` and the stream.
+
+### 15.10 Windows locale names are words, not language codes
+
+**Found**: `test_c_locale_is_not_treated_as_a_language - assert 'english' ==
+'en'`.
+
+With no usable locale environment variables, `_detect()` fell back to
+`locale.getlocale()`, which on Windows returns the platform's own locale name:
+`English_United States`, not `en_US`. Splitting that the POSIX way on `_`
+yields `english`, which is not an ISO 639 code, so every Windows user was
+silently looking up `locales/english.json` -- a file that cannot exist.
+
+**Fix**: `_system_language()` asks Windows for the UI language with
+`GetUserDefaultUILanguage` and maps the LCID through `locale.windows_locale`,
+the table the standard library already ships for this; POSIX keeps
+`getlocale()`. `_looks_like_a_language_code()` then rejects anything that is
+not two or three ASCII letters, so a locale *name* cannot reach a catalogue
+lookup even if some future path produces one.
+
 ### 15.7 Not a defect: queued runs were cancelled
 
 Runs on `main` kept disappearing while queued. GitHub keeps only one *pending*

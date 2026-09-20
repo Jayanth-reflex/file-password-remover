@@ -31,7 +31,7 @@ written to `artifacts/verification/`.
 | Lint | `ruff check .` | **pass** — no findings |
 | Format | `ruff format --check .` | **pass** — 98 files, including Python inside Markdown |
 | Types | `mypy` (`--strict`, 29 files) | **pass** — no issues |
-| Tests | `pytest -q --cov=fpr --cov=fpr_gui` | **pass** — **277 passed**, 88 % coverage |
+| Tests | `pytest -q --cov=fpr --cov=fpr_gui` | **pass** — **291 passed**, 88 % coverage |
 | Performance | `pytest -q -m slow` | **pass** — 3 passed in 4.14 s |
 | Security tests | `pytest -q tests/security -v` | **pass** — 46 passed |
 | Static analysis | `bandit -c pyproject.toml -r src` | **pass** — **0 findings** (0 high, 0 medium, 0 low) |
@@ -48,11 +48,11 @@ written to `artifacts/verification/`.
 
 | Area | Count | What it covers |
 | --- | --- | --- |
-| `tests/unit` | 112 | Secret handling, atomic writes and scrubbing, detection, policy, log redaction, the CFB writer, password routing, rendering, i18n |
+| `tests/unit` | 127 | Secret handling, atomic writes and scrubbing, detection, policy, log redaction, the CFB writer, password routing, rendering, i18n |
 | `tests/integration` | 115 | PDF, OOXML, ZIP, 7z and legacy Office end to end; engine behaviour; batch; the CLI in a real child process; the desktop window |
 | `tests/security` | 46 | Leak tests, abuse cases, the no-network guarantee |
 | `tests/perf` | 3 | Large PDF, 200 MiB archive, 100-file batch |
-| **Total** | **277** | |
+| **Total** | **291** | |
 
 ## Coverage
 

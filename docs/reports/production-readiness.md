@@ -11,7 +11,7 @@ Assessment date: **2026-09-19**. Evidence: [verification-report.md](verification
 | # | Gate | Status | Evidence |
 | --- | --- | --- | --- |
 | 1 | Supported-format behaviour is documented and tested | **Met** | [format matrix](../product/format-matrix.md) names a fixture and a test for every supported row; experimental and refused rows are marked as such |
-| 2 | The core and all adapters pass automated tests | **Met** | 277 tests pass; 89 % line coverage of `fpr` + `fpr_gui` |
+| 2 | The core and all adapters pass automated tests | **Met** | 291 tests pass; 89 % line coverage of `fpr` + `fpr_gui` |
 | 3 | Incorrect passwords and corrupt files are handled safely | **Met** | Per-format wrong-password tests assert exit 3 and that no output exists; corrupt-file tests assert exit 5 and not exit 3 |
 | 4 | Outputs are verified after processing | **Met** | [ADR-0004](../adr/0004-verify-before-publish.md); `test_verification_failure_discards_the_output` proves the negative case |
 | 5 | Sensitive data is not exposed through logs, temp files, telemetry or crash reports | **Met** | `tests/security/test_no_leaks.py` (7 tests), `test_no_network.py` (AST scan of every module plus a live socket block) |
@@ -57,6 +57,6 @@ None of these is a defect in the software. Each is a limit on what has been
 | --- | --- | --- |
 | Implementation | Core, adapters, CLI, desktop | Complete for the claimed scope |
 | Security | Threat model, abuse cases, leak and bypass tests | No unresolved high or critical findings |
-| Test | 277 tests across unit, integration, security and performance | All pass |
+| Test | 291 tests across unit, integration, security and performance | All pass |
 | Release | Wheel, sdist, macOS bundle, checksums, install verification | Produced and verified |
 | Review | Independent pass over evidence and claims | See [independent-review.md](independent-review.md) |
