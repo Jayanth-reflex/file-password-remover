@@ -262,6 +262,50 @@ nothing to resolve against.
 step remains the strict gate on the declared dependencies, which is what the
 audit was for.
 
+### 15.8 A test supplied the TTY it was asserting the absence of
+
+**Found**: the Windows matrix jobs produced seventeen minutes of no output and
+were killed at the job limit. Linux and macOS passed the same commit in under a
+minute.
+
+`subprocess.run(..., input=None)` does not redirect the child's stdin -- it
+leaves the child attached to whatever fd 0 the test runner has. The Linux and
+macOS runners start the step with `/dev/null`, so `_from_prompt` sees
+`sys.stdin.isatty() == False` and raises the usage error the test expects. The
+Windows runner supplies a real console handle, so the CLI concludes a human is
+present and calls `getpass.getpass()`, which blocks forever.
+`test_no_password_and_no_tty_is_a_usage_error` -- the test asserting there is
+no TTY -- was the one providing one.
+
+**Not a Windows bug.** Reproduced on the macOS development host by handing the
+child a pty:
+
+```python
+master, slave = pty.openpty()
+p = subprocess.Popen(
+    [sys.executable, "-m", "fpr.cli.main", "remove", str(pdf)],
+    stdin=slave,
+    stdout=subprocess.PIPE,
+    stderr=subprocess.PIPE,
+)
+os.close(slave)
+p.wait(timeout=8)  # TimeoutExpired: it hangs here too
+```
+
+The suite passed locally only because it was always launched from a harness
+whose stdin was not a terminal. Run `pytest` from a real shell on any platform
+before this fix and it hangs in the same place.
+
+**Fix**: `run()` passes `stdin=subprocess.DEVNULL` when there is nothing to
+send, so the no-TTY tests assert their own precondition instead of inheriting
+it, and every child carries `timeout=CHILD_TIMEOUT`. Separately,
+`faulthandler_timeout = 300` makes any future hang abort with every thread's
+stack, rather than a silent job killed at the limit.
+
+**The product is unchanged and was never wrong**: prompting when a terminal is
+present is the intended behaviour. The defect was entirely in what the tests
+assumed about their environment.
+
 ### 15.7 Not a defect: queued runs were cancelled
 
 Runs on `main` kept disappearing while queued. GitHub keeps only one *pending*
