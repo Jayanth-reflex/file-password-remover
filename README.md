@@ -311,8 +311,14 @@ not have. So they are sideloaded, and they say so.
 
 | | How to install | What you get |
 | :--- | :--- | :--- |
-| 🤖 **Android** | Download `app-debug.apk` from the [latest release](https://github.com/Jayanth-reflex/file-password-remover/releases/latest) → allow installing from your browser → open it. Or `adb install app-debug.apk`. | Debug-signed APK. Full format parity with the CLI. |
+| 🤖 **Android** | Download `file-password-remover-android-debug.apk` from the [latest release](https://github.com/Jayanth-reflex/file-password-remover/releases/latest) → allow installing from your browser → open it. Or `adb install <file>.apk`. | Debug-signed APK. Full format parity with the CLI. |
 | 🍏 **iOS** | Open `ios/FilePasswordRemover.xcodeproj` in Xcode, select your device, press Run. A free Apple ID works; the app lasts 7 days before it needs re-running. | Development-signed. Everything except 7-Zip. |
+
+> [!NOTE]
+> **The APK is attached from the next tagged release onward.** The release
+> workflow builds and tests it, but releases already published predate that, so
+> `releases/latest` will not have it until the next tag. Until then, build it
+> with `cd android && gradle :app:assembleDebug` — the same command CI runs.
 
 > [!IMPORTANT]
 > **The apps are not identical to the CLI.** 7-Zip works on Android and **not on
