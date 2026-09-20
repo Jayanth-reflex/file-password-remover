@@ -90,23 +90,46 @@ gpg --armor --detach-sign --output dist/SHA256SUMS.asc dist/SHA256SUMS
 
 ## Publishing to PyPI
 
-Use a trusted publisher (OIDC) rather than a long-lived API token:
+The `pypi` job in the release workflow does this with **Trusted Publishing**,
+so no API token is stored in the repository. It is skipped until the one-time
+setup below is done, so a release never fails on a publisher that does not
+exist yet.
 
-```yaml
-# in the release workflow, after the artifacts are approved
-- uses: pypa/gh-action-pypi-publish@release/v1
-  with:
-    packages-dir: dist
-```
+### One-time setup (needs the PyPI account)
 
-Manually, if you must:
+1. Sign in to PyPI and open
+   [Publishing → Add a new pending publisher](https://pypi.org/manage/account/publishing/).
+2. Fill in:
+   - **PyPI project name**: `file-password-remover`
+   - **Owner**: `Jayanth-reflex`
+   - **Repository**: `file-password-remover`
+   - **Workflow name**: `release.yml`
+   - **Environment name**: `pypi`
+3. In the GitHub repository, create the `pypi` environment
+   (*Settings → Environments → New environment*). Add a required reviewer if
+   you want a human gate on every publish.
+4. Set the repository variable that arms the job:
+   ```bash
+   gh variable set PYPI_PUBLISH --body true
+   ```
+5. Remove the "not on PyPI yet" notes from `README.md` and
+   `docs/ops/install.md`. They exist so the documented install is one that
+   actually works; leaving them behind after publishing is its own kind of
+   wrong.
+
+After that, pushing a `v*` tag publishes the wheel and sdist with
+[PEP 740 attestations](https://peps.python.org/pep-0740/) proving they were
+built by this workflow.
+
+### Manually, if you must
 
 ```bash
 python -m twine check dist/*
 python -m twine upload dist/*.whl dist/*.tar.gz
 ```
 
-Only the wheel and sdist go to PyPI. The desktop bundles are release assets.
+Only the wheel and sdist go to PyPI. The desktop bundles are release assets,
+and the container image goes to GHCR from `container.yml`.
 
 ## App stores
 

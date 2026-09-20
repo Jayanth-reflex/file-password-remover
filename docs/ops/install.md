@@ -1,27 +1,48 @@
 # Installation
 
-## From PyPI (recommended)
+## Status: not on PyPI yet
+
+`pip install file-password-remover` is the intended install and is **not live
+yet** — the project has not been published to PyPI. The release workflow is
+already configured to publish it through PyPI Trusted Publishing, so this
+section changes the day that runs. Until then, use one of the routes below.
+
+Because the name is unclaimed, treat any package called
+`file-password-remover` appearing on PyPI before this note is removed as not
+ours.
+
+## From the repository
 
 ```bash
-pip install file-password-remover
+pipx install git+https://github.com/Jayanth-reflex/file-password-remover
 ```
 
-Gives you `fpr` (command line) and `fpr-gui` (desktop window). Python 3.10 or
-newer.
+Or with pip, which also gives you `fpr-gui` and the Python API:
 
-With 7-Zip support — a separate extra because `py7zr` is LGPL-2.1-or-later and
-the default install stays permissive
+```bash
+pip install "file-password-remover @ git+https://github.com/Jayanth-reflex/file-password-remover"
+```
+
+Python 3.10 or newer. Add 7-Zip support — a separate extra because `py7zr` is
+LGPL-2.1-or-later and the default install stays permissive
 ([ADR-0006](../adr/0006-optional-lgpl-sevenzip-extra.md)):
 
 ```bash
-pip install "file-password-remover[sevenzip]"
+pip install "file-password-remover[sevenzip] @ git+https://github.com/Jayanth-reflex/file-password-remover"
 ```
 
-### Isolated, if you only want the command
+Pin to a release rather than `main` for anything you depend on:
 
 ```bash
+pip install "file-password-remover @ git+https://github.com/Jayanth-reflex/file-password-remover@v1.0.0"
+```
+
+## Once it is on PyPI
+
+```bash
+pip install file-password-remover
+pip install "file-password-remover[sevenzip]"
 pipx install file-password-remover
-pipx install "file-password-remover[sevenzip]"
 ```
 
 ### Hash-pinned, for a locked-down environment

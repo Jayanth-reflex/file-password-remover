@@ -13,7 +13,7 @@
 [![No network](https://img.shields.io/badge/network-none-success)](docs/adr/0002-local-only-no-backend.md)
 
 ```bash
-pip install file-password-remover
+pipx install git+https://github.com/Jayanth-reflex/file-password-remover
 fpr remove quarterly-report.pdf
 ```
 
@@ -90,25 +90,19 @@ Full matrix, including everything deliberately unsupported and why:
 <table>
 <tr><td width="50%">
 
-**pip** — the CLI, the desktop app and the Python API
-
-```bash
-pip install file-password-remover
-```
-
-With 7-Zip support:
-
-```bash
-pip install "file-password-remover[sevenzip]"
-```
-
-</td><td width="50%">
-
 **pipx** — isolated, just the commands
 
 ```bash
-pipx install file-password-remover
+pipx install git+https://github.com/Jayanth-reflex/file-password-remover
 ```
+
+**pip** — also gives you the desktop app and the Python API
+
+```bash
+pip install "file-password-remover[sevenzip] @ git+https://github.com/Jayanth-reflex/file-password-remover"
+```
+
+</td><td width="50%">
 
 **Docker** — nothing installed, parsers sandboxed
 
@@ -119,13 +113,23 @@ docker run --rm -v "$PWD:/data" \
   inspect /data/report.pdf
 ```
 
+**Standalone** — no Python at all
+
+macOS, Linux and Windows bundles are on the
+[releases page](https://github.com/Jayanth-reflex/file-password-remover/releases).
+
 </td></tr>
 </table>
 
-Standalone bundles for macOS, Linux and Windows — no Python needed — are on the
-[releases page](https://github.com/Jayanth-reflex/file-password-remover/releases).
-They are **unsigned**; verify the checksum and see
-[install.md](docs/ops/install.md) for what your OS will say about that.
+> **Not on PyPI yet.** `pip install file-password-remover` will be the install
+> once the project is published; the release workflow is already wired for it
+> via PyPI Trusted Publishing, and this line stays here until that has actually
+> happened. The name is reserved by nobody — including us — so do not trust a
+> package of that name appearing before this note is gone.
+
+The standalone bundles are **unsigned**. Verify the checksum, and see
+[install.md](docs/ops/install.md) for exactly what macOS and Windows will say
+about that.
 
 ## Use it
 

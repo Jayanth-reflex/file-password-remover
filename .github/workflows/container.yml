@@ -64,7 +64,10 @@ jobs:
 
           # Generate a protected fixture with the image's own library, so the
           # test needs nothing installed on the runner.
-          docker run --rm -v "$work:/data" --entrypoint python fpr:smoke - <<'PY'
+          # -i is required: "python -" reads the script from stdin, and without
+          # -i docker gives the container no stdin at all, so python exits on
+          # immediate EOF having done nothing.
+          docker run --rm -i -v "$work:/data" --entrypoint python fpr:smoke - <<'PY'
           from pathlib import Path
           from fpr.testing import fixtures as F
           out = Path("/data")
@@ -75,6 +78,12 @@ jobs:
           (out / "sample.zip").write_bytes(F.make_zip_aes(password="container-smoke"))
           print("fixtures written")
           PY
+
+          # Fail loudly here rather than three commands later with a confusing
+          # "file not found".
+          for f in sample.pdf sample.docx sample.zip; do
+            test -s "$work/$f" || { echo "fixture $f was not created" >&2; exit 1; }
+          done
 
           docker run --rm fpr:smoke version
           docker run --rm fpr:smoke formats > /dev/null
