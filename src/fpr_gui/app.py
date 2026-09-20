@@ -36,10 +36,21 @@ from pathlib import Path
 from tkinter import filedialog, messagebox, ttk
 from typing import Any
 
-from fpr import RemovalOptions, Secret, __version__, inspect, plan_output_path, remove
+from fpr import (
+    ProtectOptions,
+    ProtectResult,
+    RemovalOptions,
+    Secret,
+    __version__,
+    inspect,
+    passwords,
+    plan_output_path,
+    protect,
+    remove,
+)
 from fpr.errors import FprError
 from fpr.i18n import t
-from fpr.types import Detection, Removability, RemovalResult
+from fpr.types import Detection, FormatId, Protection, Removability, RemovalResult
 from fpr_gui import theme
 
 __all__ = ["main", "App"]
@@ -59,6 +70,7 @@ _MARK_CAPTIONS = {
     "content_scope": "scope",
     "docinfo_keys": "docinfo",
     "has_xmp": "xmp",
+    "opens_with_password": "opens",
 }
 
 
@@ -92,6 +104,7 @@ class App:
         self.queue: queue.Queue[_Message] = queue.Queue()
         self.source: Path | None = None
         self.detection: Detection | None = None
+        self._generated: str | None = None
         self.output: Path | None = None
         self.busy = False
         self._poll_job: str | None = None
@@ -124,7 +137,7 @@ class App:
             outer,
             text=t(
                 "gui.subtitle",
-                "Remove protection from a file you have the password for. "
+                "Lock a file, or open one you have the password for. "
                 "Everything happens on this computer.",
             ),
             wraplength=560,
@@ -192,6 +205,17 @@ class App:
             command=self._toggle_password,
         ).grid(row=0, column=1, sticky="w", padx=(PAD, 0))
 
+        # Only meaningful when adding a password, so it is hidden otherwise.
+        self.generate_var = tk.BooleanVar(value=True)
+        generate_check = ttk.Checkbutton(
+            pwbox,
+            text=t("gui.generate", "Generate a strong password for me"),
+            variable=self.generate_var,
+            command=self._toggle_password,
+        )
+        generate_check.grid(row=1, column=0, columnspan=2, sticky="w", pady=(6, 0))
+        self._protect_only = [generate_check]
+
         # ---- destination
         self._section(outer, row.next(), t("gui.output", "Destination"), top=PAD * 2)
         outbox = ttk.Frame(outer)
@@ -221,6 +245,7 @@ class App:
             state="disabled",
         )
         self.restrictions_check.grid(row=2, column=0, columnspan=2, sticky="w", pady=(4, 0))
+        self._remove_only = [self.restrictions_check]
 
         # ---- action
         ttk.Frame(outer, style="Hairline.TFrame", height=1).grid(
@@ -256,6 +281,26 @@ class App:
         # ---- hallmark: the verification evidence, populated only on success
         self.hallmark = ttk.Frame(outer)
         self.hallmark.grid(row=row.next(), column=0, sticky="ew")
+
+        # ---- a generated password, shown once and never stored
+        self.generated_hint = ttk.Frame(outer)
+        self.generated_hint.grid(row=row.next(), column=0, sticky="ew", pady=(PAD, 0))
+        ttk.Label(
+            self.generated_hint, text=_caption(t("gui.password", "Password")), style="Brass.TLabel"
+        ).grid(row=0, column=0, sticky="w")
+        self.generated_label = ttk.Label(self.generated_hint, text="", style="Mark.TLabel")
+        self.generated_label.grid(row=1, column=0, sticky="w", pady=(2, 0))
+        ttk.Label(
+            self.generated_hint,
+            text=t(
+                "gui.generated.warning",
+                "Save this now. It is shown once, and this tool cannot recover it.",
+            ),
+            style="Brass.TLabel",
+            wraplength=520,
+            justify="left",
+        ).grid(row=2, column=0, sticky="w", pady=(4, 0))
+        self.generated_hint.grid_remove()
 
         ttk.Label(
             outer,
@@ -319,6 +364,49 @@ class App:
                 row=2, column=column, sticky="w", padx=(0, PAD), pady=(2, 0)
             )
 
+    @property
+    def available(self) -> str:
+        """What can be done with the loaded file: remove, protect, or nothing.
+
+        Removing and protecting are the same gesture in opposite directions, so
+        the file itself decides which one is on offer rather than the user
+        picking a mode first.
+        """
+        if self.detection is None:
+            return "nothing"
+        if self.detection.removability is Removability.REMOVABLE:
+            return "remove"
+        if self.detection.protection is Protection.NONE and self.detection.format_id in (
+            FormatId.PDF,
+            FormatId.ZIP,
+        ):
+            return "protect"
+        return "nothing"
+
+    def _sync_action(self) -> None:
+        """Point the primary button at whichever direction applies."""
+        action = self.available
+        labels = {
+            "remove": t("gui.remove", "Remove protection"),
+            "protect": t("gui.protect", "Protect this file"),
+            "nothing": t("gui.remove", "Remove protection"),
+        }
+        self.run_button.configure(
+            text=labels[action], state="normal" if action != "nothing" else "disabled"
+        )
+        # The generate option only makes sense when setting a new password.
+        for widget in self._protect_only:
+            if action == "protect":
+                widget.grid()
+            else:
+                widget.grid_remove()
+        for widget in self._remove_only:
+            if action == "protect":
+                widget.grid_remove()
+            else:
+                widget.grid()
+        self._toggle_password()
+
     def _toggle_password(self) -> None:
         self.password_entry.configure(show="" if self.show_var.get() else "•")
 
@@ -352,6 +440,8 @@ class App:
         self.reveal_button.grid_remove()
         # Evidence belongs to one run; it must never sit under a different file.
         self.show_hallmark({})
+        self.generated_label.configure(text="")
+        self.generated_hint.grid_remove()
         self._set_detail(t("gui.inspecting", "Inspecting…"))
         self._run_async(lambda: inspect(path), "detection")
 
@@ -386,7 +476,9 @@ class App:
                 t("gui.title", "File Password Remover"), t("gui.nofile", "Choose a file first.")
             )
             return
-        if not self.password_var.get():
+        protecting = self.available == "protect"
+        generating = protecting and bool(self.generate_var.get())
+        if not generating and not self.password_var.get():
             messagebox.showinfo(
                 t("gui.title", "File Password Remover"),
                 t("gui.password.empty", "Enter the file's password first."),
@@ -395,6 +487,10 @@ class App:
             return
 
         source = self.source
+        if protecting:
+            self._run_protect(source, generating)
+            return
+
         options = self._options()
         # Take the password out of the Tk variable immediately: a StringVar
         # lives as long as the widget, and we do not want it to.
@@ -409,6 +505,52 @@ class App:
 
         self._set_status(t("gui.working", "Working…"))
         self._run_async(work, "result")
+
+    def _run_protect(self, source: Path, generating: bool) -> None:
+        """Write a protected copy, and surface a generated password once."""
+        options = ProtectOptions(overwrite=self.overwrite_var.get())
+        secret = passwords.generate() if generating else Secret.from_text(self.password_var.get())
+        self.password_var.set("")
+        # Only shown when this tool made it: a password the user typed is
+        # already theirs, and echoing it would only put it somewhere new.
+        self._generated = None
+        if generating:
+            with secret.expose() as text:
+                self._generated = text
+
+        def work() -> ProtectResult:
+            try:
+                return protect(source, secret, options)
+            finally:
+                secret.close()
+
+        self._set_status(t("gui.working", "Working…"))
+        self._run_async(work, "protected")
+
+    def show_protected(self, result: ProtectResult) -> None:
+        self.output = result.output
+        self._set_status(
+            "\n".join(
+                [
+                    t(
+                        "gui.status.protected",
+                        "Done. Verified protected copy written to {path}.",
+                        path=str(result.output),
+                    ),
+                    t("gui.status.original", "The original file was not changed."),
+                ]
+            )
+        )
+        self.show_hallmark(dict(result.verification))
+        self.reveal_button.grid()
+        if self._generated is not None:
+            self.generated_label.configure(text=self._generated)
+            self.generated_hint.grid()
+            # Held only until the next action; never written anywhere.
+            self._generated = None
+        else:
+            self.generated_label.configure(text="")
+            self.generated_hint.grid_remove()
 
     def on_reveal(self) -> None:
         if self.output is None:
@@ -456,19 +598,24 @@ class App:
     def _handle(self, message: _Message) -> None:
         self.busy = False
         self.progress.stop()
-        self.run_button.configure(state="normal")
         self.choose_button.configure(state="normal")
+        # The primary button's label and state depend on the file, so the
+        # action decides rather than a blanket re-enable.
+        self._sync_action()
 
         if message.kind == "detection":
             self.show_detection(message.payload)
         elif message.kind == "result":
             self.show_result(message.payload)
+        elif message.kind == "protected":
+            self.show_protected(message.payload)
         elif message.kind == "error":
             self.show_error(message.payload)
 
     # -------------------------------------------------------------- display
     def show_detection(self, detection: Detection) -> None:
         self.detection = detection
+        self._sync_action()
         lines = [
             f"{t('gui.format', 'Format')}: {detection.format_name}",
             f"{t('gui.protection', 'Protection')}: {detection.protection.value}",

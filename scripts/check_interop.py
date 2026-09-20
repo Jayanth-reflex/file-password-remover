@@ -24,7 +24,9 @@ from fpr import RemovalOptions, Secret, inspect, remove  # noqa: E402
 from fpr.testing import fixtures as F  # noqa: E402
 from fpr.types import Protection  # noqa: E402
 
-PASSWORD = "interop-fixed-password"  # nosec B105 - matches the ports' test constant
+# Not a credential: a fixed string the Swift and Kotlin suites also use, so
+# the artifacts they write can be opened here.
+PASSWORD = "interop-fixed-password"  # noqa: S105  # nosec B105
 
 
 def _check(path: Path, expect_members: dict[str, str] | None) -> None:

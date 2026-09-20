@@ -7,6 +7,7 @@ keyboard cannot reach. They are skipped where no display is available.
 
 from __future__ import annotations
 
+import re
 import time
 from pathlib import Path
 
@@ -253,3 +254,56 @@ def test_no_state_is_conveyed_by_colour_alone(app, pdf_restricted: Path) -> None
 def test_window_has_a_usable_minimum_size(app) -> None:
     width, height = app.root.minsize()
     assert width >= 600 and height >= 480
+
+
+# ------------------------------------------------------------------ protect
+def test_an_unprotected_file_offers_to_be_protected(app, pdf_plain: Path) -> None:
+    app.load(pdf_plain)
+    _settle(app)
+
+    assert app.available == "protect"
+    assert app.run_button.cget("text") == "Protect this file"
+
+
+def test_a_protected_file_offers_to_be_opened(app, pdf_encrypted: Path) -> None:
+    app.load(pdf_encrypted)
+    _settle(app)
+
+    assert app.available == "remove"
+    assert app.run_button.cget("text") == "Remove protection"
+
+
+def test_protecting_shows_the_generated_password_once(app, pdf_plain: Path) -> None:
+    """The only copy that will ever exist has to reach the user."""
+    app.load(pdf_plain)
+    _settle(app)
+    app.generate_var.set(True)
+
+    app.on_run()
+    _settle(app)
+
+    shown = app.generated_label.cget("text")
+    assert re.fullmatch(r"[a-z0-9]{4}(-[a-z0-9]{4}){4}", shown), f"not a password: {shown!r}"
+    assert (pdf_plain.parent / "plain-protected.pdf").exists()
+
+    # And it is genuinely the password that opens it.
+    from fpr import RemovalOptions, Secret, remove
+
+    remove(
+        pdf_plain.parent / "plain-protected.pdf",
+        Secret.from_text(shown),
+        RemovalOptions(output=pdf_plain.parent / "back.pdf"),
+    )
+
+
+def test_a_password_the_user_chose_is_not_echoed(app, pdf_plain: Path) -> None:
+    app.load(pdf_plain)
+    _settle(app)
+    app.generate_var.set(False)
+    app.password_var.set("a-password-i-chose")
+
+    app.on_run()
+    _settle(app)
+
+    assert app.generated_label.cget("text") == ""
+    assert "a-password-i-chose" not in app.status.cget("text")

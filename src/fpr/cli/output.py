@@ -54,6 +54,7 @@ _MARK_CAPTIONS = {
     "docinfo_keys": "docinfo",
     "has_xmp": "xmp",
     "protection_removed": "removed",
+    "opens_with_password": "opens",
 }
 
 # Captions are indented under the status glyph so the eye has one left edge.
