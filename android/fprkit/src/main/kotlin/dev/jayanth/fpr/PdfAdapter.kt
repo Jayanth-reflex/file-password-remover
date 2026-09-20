@@ -1,47 +1,40 @@
 package dev.jayanth.fpr
 
-import java.io.ByteArrayOutputStream
-import org.apache.pdfbox.Loader
-import org.apache.pdfbox.pdmodel.PDDocument
-import org.apache.pdfbox.pdmodel.encryption.InvalidPasswordException
-
 /**
- * PDF, via PDFBox's implementation of the standard security handler.
+ * PDF, via whichever PDFBox binding is registered (see [PdfBackend]).
  *
- * PDFBox decrypts once the correct password is supplied and can then save the
- * document with its security removed. It does not, and this adapter does not,
- * try to open a document whose password is unknown.
+ * All the policy lives here so it is written and tested once: what counts as a
+ * refusal, what the encryption is called, and verifying the output by re-reading
+ * it. Only the PDFBox calls differ between desktop and Android.
  */
-class PdfAdapter {
+class PdfAdapter(private val backend: PdfBackend = PdfBackends.current()) {
 
     fun detect(data: ByteArray): Detection {
         val document = try {
-            Loader.loadPDF(data)
-        } catch (error: InvalidPasswordException) {
-            // It refused an empty password, so there is a user password.
+            backend.open(data, null)
+        } catch (error: FprException.WrongPassword) {
+            // It refused an empty password, so a user password is set.
             return Detection(
                 FormatId.PDF, Protection.USER_PASSWORD, Removability.REMOVABLE,
                 algorithmName(data),
                 "Encrypted. Supply the open (user) password or the owner password.",
             )
-        } catch (error: Exception) {
-            throw FprException.CorruptFile("This file could not be opened as a PDF.")
         }
 
         document.use {
             if (!it.isEncrypted) {
                 return Detection(
                     FormatId.PDF, Protection.NONE, Removability.NOT_PROTECTED,
-                    detail = "Not encrypted. ${it.numberOfPages} page(s).",
+                    detail = "Not encrypted. ${it.pageCount} page(s).",
                 )
             }
-            // It opened with an empty user password, so anyone can read it and
-            // the encryption is only carrying permission flags.
-            val denied = deniedPermissions(it)
+            // It opened with an empty user password, so anyone can read it: the
+            // encryption is only carrying permission flags.
+            val denied = it.deniedPermissions
             if (denied.isEmpty()) {
                 return Detection(
                     FormatId.PDF, Protection.NONE, Removability.NOT_PROTECTED,
-                    detail = "Not encrypted. ${it.numberOfPages} page(s).",
+                    detail = "Not encrypted. ${it.pageCount} page(s).",
                 )
             }
             return Detection(
@@ -56,9 +49,9 @@ class PdfAdapter {
 
     fun remove(data: ByteArray, password: String): ByteArray {
         // Decide refusals before touching the password. A document with an empty
-        // user password opens for anyone, and PDFBox rejects a password that
-        // matches neither user nor owner -- which would report "wrong password"
-        // for a file we are refusing on policy grounds anyway.
+        // user password opens for anyone, and PDFBox rejects a password matching
+        // neither user nor owner -- reporting "wrong password" for a file being
+        // refused on policy grounds would be misleading.
         val detection = detect(data)
         when (detection.protection) {
             Protection.OWNER_RESTRICTIONS -> throw FprException.PolicyRefused(detection.detail)
@@ -68,46 +61,25 @@ class PdfAdapter {
             else -> Unit
         }
 
-        val document = try {
-            Loader.loadPDF(data, password)
-        } catch (error: InvalidPasswordException) {
-            throw FprException.WrongPassword()
-        } catch (error: Exception) {
-            throw FprException.CorruptFile("This file could not be opened as a PDF.")
-        }
-
-        document.use {
-            it.isAllSecurityToBeRemoved = true
-            val output = ByteArrayOutputStream()
-            it.save(output)
-            val bytes = output.toByteArray()
+        backend.open(data, password).use { document ->
+            val output = document.saveDecrypted()
 
             // Verify by re-reading what we are about to return.
-            Loader.loadPDF(bytes).use { rewritten ->
+            backend.open(output, null).use { rewritten ->
                 if (rewritten.isEncrypted) {
                     throw FprException.InternalError("The rewritten PDF is still encrypted.")
                 }
-                if (rewritten.numberOfPages != it.numberOfPages) {
+                if (rewritten.pageCount != document.pageCount) {
                     throw FprException.InternalError(
-                        "Page count changed: ${it.numberOfPages} in, ${rewritten.numberOfPages} out."
+                        "Page count changed: ${document.pageCount} in, ${rewritten.pageCount} out."
                     )
                 }
             }
-            return bytes
+            return output
         }
     }
 
-    fun pageCount(data: ByteArray): Int = Loader.loadPDF(data).use { it.numberOfPages }
-
-    private fun deniedPermissions(document: PDDocument): List<String> {
-        val permissions = document.currentAccessPermission
-        return buildList {
-            if (!permissions.canPrint()) add("printing")
-            if (!permissions.canExtractContent()) add("copying")
-            if (!permissions.canExtractForAccessibility()) add("accessibility")
-            if (!permissions.canModify()) add("editing")
-        }
-    }
+    fun pageCount(data: ByteArray): Int = backend.open(data, null).use { it.pageCount }
 
     /** Report the encryption revision, which PDFBox does not surface directly. */
     private fun algorithmName(data: ByteArray): String? {
@@ -116,8 +88,7 @@ class PdfAdapter {
             ?: text.indexOf("/Filter /Standard").takeIf { it >= 0 }
             ?: return null
         val window = text.substring(filter, minOf(text.length, filter + 400))
-        val revision = Regex("/R\\s*(\\d+)").find(window)?.groupValues?.get(1)?.toIntOrNull()
-        return when (revision) {
+        return when (Regex("/R\\s*(\\d+)").find(window)?.groupValues?.get(1)?.toIntOrNull()) {
             2 -> "RC4 40-bit (R2)"
             3 -> "RC4 128-bit (R3)"
             4 -> "AES-128 (R4)"

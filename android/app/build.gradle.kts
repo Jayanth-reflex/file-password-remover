@@ -51,6 +51,9 @@ android {
 
 dependencies {
     implementation(project(":fprkit"))
+    // Desktop PDFBox cannot run on ART (PDDocument touches java.awt), so the
+    // app binds this Android port instead. See PdfBackend.
+    implementation(libs.pdfbox.android)
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.activity.compose)
     implementation(libs.androidx.lifecycle.viewmodel.compose)

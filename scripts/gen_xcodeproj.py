@@ -98,9 +98,7 @@ def quote(value: str) -> str:
 
 
 def render_settings(settings: dict[str, str], indent: str) -> str:
-    return "\n".join(
-        f"{indent}{key} = {quote(value)};" for key, value in sorted(settings.items())
-    )
+    return "\n".join(f"{indent}{key} = {quote(value)};" for key, value in sorted(settings.items()))
 
 
 def main() -> int:
@@ -143,7 +141,7 @@ def main() -> int:
             f"\t\t{oid('fileref/' + relative)} /* {Path(relative).name} */ = "
             f"{{isa = PBXFileReference; lastKnownFileType = sourcecode.swift; "
             f'name = {Path(relative).name}; path = "{path.relative_to(IOS)}"; '
-            f"sourceTree = \"<group>\"; }};"
+            f'sourceTree = "<group>"; }};'
         )
     add(
         f"\t\t{product_id} /* FilePasswordRemover.app */ = {{isa = PBXFileReference; "
@@ -170,7 +168,7 @@ def main() -> int:
     add(f"\t\t\t\t{group_kit} /* FprKit */,")
     add(f"\t\t\t\t{group_products} /* Products */,")
     add("\t\t\t);")
-    add("\t\t\tsourceTree = \"<group>\";")
+    add('\t\t\tsourceTree = "<group>";')
     add("\t\t};")
     for group_id, label, prefix in (
         (group_app, "App", "App/"),
@@ -184,7 +182,7 @@ def main() -> int:
                 add(f"\t\t\t\t{oid('fileref/' + relative)} /* {Path(relative).name} */,")
         add("\t\t\t);")
         add(f"\t\t\tname = {label};")
-        add("\t\t\tsourceTree = \"<group>\";")
+        add('\t\t\tsourceTree = "<group>";')
         add("\t\t};")
     add(f"\t\t{group_products} /* Products */ = {{")
     add("\t\t\tisa = PBXGroup;")
@@ -192,7 +190,7 @@ def main() -> int:
     add(f"\t\t\t\t{product_id} /* FilePasswordRemover.app */,")
     add("\t\t\t);")
     add("\t\t\tname = Products;")
-    add("\t\t\tsourceTree = \"<group>\";")
+    add('\t\t\tsourceTree = "<group>";')
     add("\t\t};")
     add("/* End PBXGroup section */")
 
@@ -212,7 +210,7 @@ def main() -> int:
     add("\t\t\tname = FilePasswordRemover;")
     add("\t\t\tproductName = FilePasswordRemover;")
     add(f"\t\t\tproductReference = {product_id} /* FilePasswordRemover.app */;")
-    add("\t\t\tproductType = \"com.apple.product-type.application\";")
+    add('\t\t\tproductType = "com.apple.product-type.application";')
     add("\t\t};")
     add("/* End PBXNativeTarget section */")
 
@@ -230,7 +228,7 @@ def main() -> int:
     add("\t\t\t\t};")
     add("\t\t\t};")
     add(f"\t\t\tbuildConfigurationList = {config_list_project};")
-    add("\t\t\tcompatibilityVersion = \"Xcode 14.0\";")
+    add('\t\t\tcompatibilityVersion = "Xcode 14.0";')
     add("\t\t\tdevelopmentRegion = en;")
     add("\t\t\thasScannedForEncodings = 0;")
     add("\t\t\tknownRegions = (")
@@ -239,8 +237,8 @@ def main() -> int:
     add("\t\t\t);")
     add(f"\t\t\tmainGroup = {group_root};")
     add(f"\t\t\tproductRefGroup = {group_products} /* Products */;")
-    add("\t\t\tprojectDirPath = \"\";")
-    add("\t\t\tprojectRoot = \"\";")
+    add('\t\t\tprojectDirPath = "";')
+    add('\t\t\tprojectRoot = "";')
     add("\t\t\ttargets = (")
     add(f"\t\t\t\t{target_id} /* FilePasswordRemover */,")
     add("\t\t\t);")

@@ -17,12 +17,14 @@ import hashlib
 import json
 from dataclasses import asdict, dataclass, field
 from pathlib import Path
+from typing import Literal
 
 from . import fixtures as F
 
 __all__ = ["Vector", "export_corpus", "CORPUS_VERSION"]
 
 CORPUS_VERSION = 1
+
 
 def _members(pairs: tuple[tuple[str, bytes], ...]) -> list[dict[str, object]]:
     """Describe archive members by name, size and plaintext digest.
@@ -39,9 +41,7 @@ def _members(pairs: tuple[tuple[str, bytes], ...]) -> list[dict[str, object]]:
 # Plaintext of the ZIP/7z members, so a port can assert on decrypted content
 # rather than merely on "no exception was thrown".
 _ZIP_MEMBERS = _members(F._ZIP_MEMBERS)
-_MIXED_MEMBERS = _members(
-    (("public.txt", b"not secret\n" * 10), ("private.txt", b"secret\n" * 10))
-)
+_MIXED_MEMBERS = _members((("public.txt", b"not secret\n" * 10), ("private.txt", b"secret\n" * 10)))
 
 
 @dataclass(frozen=True)
@@ -74,7 +74,14 @@ def _pdf_vectors() -> list[tuple[Vector, bytes]]:
             F.make_pdf(),
         )
     )
-    for revision, label in ((2, "rc4-40"), (3, "rc4-128"), (4, "aes-128"), (5, "aes-256-r5"), (6, "aes-256-r6")):
+    revisions: tuple[tuple[Literal[2, 3, 4, 5, 6], str], ...] = (
+        (2, "rc4-40"),
+        (3, "rc4-128"),
+        (4, "aes-128"),
+        (5, "aes-256-r5"),
+        (6, "aes-256-r6"),
+    )
+    for revision, label in revisions:
         out.append(
             (
                 Vector(
@@ -87,7 +94,9 @@ def _pdf_vectors() -> list[tuple[Vector, bytes]]:
                     notes=f"Standard security handler, R={revision}.",
                     expect={"pages": 3, "revision": revision},
                 ),
-                F.make_pdf(F.PdfSpec(user=F.SAMPLE_PASSWORD, owner=F.OWNER_PASSWORD, revision=revision)),
+                F.make_pdf(
+                    F.PdfSpec(user=F.SAMPLE_PASSWORD, owner=F.OWNER_PASSWORD, revision=revision)
+                ),
             )
         )
     out.append(

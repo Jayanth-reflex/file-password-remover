@@ -177,16 +177,31 @@ class OoxmlAdapter {
         }
 
         val xml = stream.copyOfRange(8, stream.size)
-        val document = DocumentBuilderFactory.newInstance().apply {
-            isNamespaceAware = true
-            // This XML comes from the file being inspected: never resolve
-            // external entities from it.
-            setFeature("http://apache.org/xml/features/disallow-doctype-decl", true)
-            setFeature("http://xml.org/sax/features/external-general-entities", false)
-            setFeature("http://xml.org/sax/features/external-parameter-entities", false)
-            isXIncludeAware = false
-            isExpandEntityReferences = false
-        }.newDocumentBuilder().parse(xml.inputStream())
+        // This XML comes from the file being inspected, so external entities
+        // must never be resolved. Android's parser does not implement all of
+        // these feature names -- it rejects them outright rather than ignoring
+        // them -- so each is set independently and the EntityResolver below is
+        // the backstop that works on every runtime.
+        val factory = DocumentBuilderFactory.newInstance()
+        factory.isNamespaceAware = true
+        for (feature in listOf(
+            "http://apache.org/xml/features/disallow-doctype-decl",
+            "http://xml.org/sax/features/external-general-entities",
+            "http://xml.org/sax/features/external-parameter-entities",
+            "http://apache.org/xml/features/nonvalidating/load-external-dtd",
+        )) {
+            runCatching {
+                factory.setFeature(feature, feature.endsWith("disallow-doctype-decl"))
+            }
+        }
+        runCatching { factory.isXIncludeAware = false }
+        factory.isExpandEntityReferences = false
+
+        val builder = factory.newDocumentBuilder()
+        builder.setEntityResolver { _, _ ->
+            org.xml.sax.InputSource(java.io.ByteArrayInputStream(ByteArray(0)))
+        }
+        val document = builder.parse(xml.inputStream())
 
         fun element(local: String): Element = document.getElementsByTagName("*").let { nodes ->
             (0 until nodes.length).asSequence()
