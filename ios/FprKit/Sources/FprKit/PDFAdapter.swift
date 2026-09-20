@@ -119,6 +119,49 @@ public struct PDFAdapter: Sendable {
         return rebuilt
     }
 
+    /// Encrypt with the supplied password.
+    ///
+    /// PDFKit's write options set both the user and the owner password. The
+    /// same value is used for both: a separate owner password would be a second
+    /// credential that also opens the file, which is one more thing to lose for
+    /// no benefit here.
+    public func protect(_ data: Data, password: String) throws -> Data {
+        guard let document = PDFDocument(data: data) else {
+            throw FprError.corruptFile("This file could not be opened as a PDF.")
+        }
+        guard !document.isEncrypted, !document.isLocked else {
+            throw FprError.policyRefused(
+                "This PDF is already encrypted. Remove the existing protection first."
+            )
+        }
+        let pagesIn = document.pageCount
+
+        let options: [PDFDocumentWriteOption: Any] = [
+            .userPasswordOption: password,
+            .ownerPasswordOption: password,
+        ]
+        guard let output = document.dataRepresentation(options: options), !output.isEmpty else {
+            throw FprError.internalError("PDFKit produced no output for this document.")
+        }
+
+        // Verify before returning: it must refuse an empty password, and it
+        // must open with the real one holding the same pages.
+        guard let locked = PDFDocument(data: output), locked.isLocked else {
+            throw FprError.internalError("The written PDF is not password protected.")
+        }
+        guard locked.unlock(withPassword: password) else {
+            throw FprError.internalError(
+                "The written PDF could not be opened with the password it was just given."
+            )
+        }
+        guard locked.pageCount == pagesIn else {
+            throw FprError.internalError(
+                "Page count changed: \(pagesIn) in, \(locked.pageCount) out."
+            )
+        }
+        return output
+    }
+
     public func pageCount(_ data: Data) throws -> Int {
         guard let document = PDFDocument(data: data) else {
             throw FprError.corruptFile("This file could not be opened as a PDF.")

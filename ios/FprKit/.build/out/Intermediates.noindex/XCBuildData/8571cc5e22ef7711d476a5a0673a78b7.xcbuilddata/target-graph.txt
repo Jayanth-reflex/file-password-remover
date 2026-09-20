@@ -1,0 +1,7 @@
+Target dependency graph (3 targets)
+Target 'AllExcludingTests' in project 'Aggregate'
+➜ Explicit dependency on target 'FprKit-product' in project 'FprKit'
+➜ Explicit dependency on target 'FprKit' in project 'FprKit'
+Target 'FprKit-product' in project 'FprKit'
+➜ Explicit dependency on target 'FprKit' in project 'FprKit'
+Target 'FprKit' in project 'FprKit' (no dependencies)

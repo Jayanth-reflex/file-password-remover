@@ -42,6 +42,31 @@ public struct Engine: Sendable {
         }
     }
 
+    /// Write a copy of `data` protected with `password`.
+    ///
+    /// Only PDF and ZIP can be protected. Every other format refuses rather
+    /// than quietly handing back a copy with no encryption on it, which would
+    /// be the most dangerous possible failure for this operation.
+    public func protect(_ data: Data, password: String) throws -> Data {
+        switch try sniff(data) {
+        case .pdf: return try PDFAdapter().protect(data, password: password)
+        case .zip: return try ZipAdapter().protect(data, password: password)
+        case .ooxml:
+            throw FprError.unsupportedFormat(
+                "Adding protection to Office documents is not supported yet. This app can "
+                + "remove it, but not add it."
+            )
+        case .sevenZip:
+            throw FprError.unsupportedFormat(
+                "7-Zip archives are not supported in this app at all."
+            )
+        case .legacyOffice:
+            throw FprError.unsupportedFormat(
+                "Adding protection to Word/Excel 97-2003 files is not supported."
+            )
+        }
+    }
+
     /// Identify the container from its magic bytes.
     func sniff(_ data: Data) throws -> Format {
         guard data.count >= 8 else {

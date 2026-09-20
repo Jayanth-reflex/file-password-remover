@@ -1,4 +1,5 @@
 import Foundation
+import Security
 
 /// ZIP archives: WinZip AES (AE-1/AE-2) and legacy PKWARE ZipCrypto.
 public struct ZipAdapter: Sendable {
@@ -101,6 +102,139 @@ public struct ZipAdapter: Sendable {
             throw FprError.wrongPassword
         }
         return stream.decrypt(payload.dropFirst(12))
+    }
+
+    /// Rewrite the archive with every entry under WinZip AES-256.
+    ///
+    /// Entries are re-deflated rather than copied, because the stored stream
+    /// has to change: AE-2 encrypts the *compressed* bytes and zeroes the CRC
+    /// in the header, so nothing from the original entry can be reused as-is.
+    public func protect(_ data: Data, password: String) throws -> Data {
+        let entries = try ZipStructure.readCentralDirectory(data)
+        guard !entries.contains(where: \.isEncrypted) else {
+            throw FprError.policyRefused(
+                "This ZIP is already encrypted. Remove the existing protection first."
+            )
+        }
+        let passwordData = Data(password.utf8)
+
+        var output = Data()
+        var central = Data()
+        var count = 0
+
+        for entry in entries {
+            let payload = try ZipStructure.payloadOffset(data, entry: entry)
+            let end = payload + Int(entry.compressedSize)
+            guard end <= data.count else {
+                throw FprError.corruptFile("payload of \(entry.name) runs past end of file")
+            }
+            let stored = data.subdata(in: (data.startIndex + payload)..<(data.startIndex + end))
+            let plaintext = try ZipArchiveReader.decompress(
+                stored, method: entry.method, expectedSize: Int(entry.uncompressedSize)
+            )
+
+            let nameData = Data(entry.name.utf8)
+            let isDirectory = entry.name.hasSuffix("/")
+            let method: UInt16 = isDirectory ? 0 : 8
+            let compressed = isDirectory ? Data() : try Deflate.deflate(plaintext)
+            let encrypted = isDirectory
+                ? Data()
+                : try Self.encryptAES(compressed, password: passwordData)
+
+            // Method 99 marks "see the AES extra field"; the real method moves
+            // into that field.
+            let extra = Self.aesExtraField(actualMethod: method)
+            let flags: UInt16 = isDirectory ? 0 : 0x1
+            let localOffset = UInt32(output.count)
+            let storedMethod: UInt16 = isDirectory ? 0 : 99
+            // AE-2 zeroes the CRC in the headers: the authentication code is
+            // what proves integrity, and a CRC would leak a check on the
+            // plaintext to anyone without the password.
+            let crc: UInt32 = 0
+
+            func header(_ signature: UInt32, central isCentral: Bool) -> Data {
+                var block = Data()
+                block.append(u32: signature)
+                if isCentral { block.append(u16: 20) }
+                block.append(u16: 20)
+                block.append(u16: flags)
+                block.append(u16: storedMethod)
+                block.append(u16: entry.modTime)
+                block.append(u16: entry.modDate)
+                block.append(u32: crc)
+                block.append(u32: UInt32(encrypted.count))
+                block.append(u32: UInt32(plaintext.count))
+                block.append(u16: UInt16(nameData.count))
+                block.append(u16: UInt16(isDirectory ? 0 : extra.count))
+                return block
+            }
+
+            output.append(header(ZipStructure.localSignature, central: false))
+            output.append(nameData)
+            if !isDirectory { output.append(extra) }
+            output.append(encrypted)
+
+            central.append(header(ZipStructure.centralSignature, central: true))
+            central.append(u16: 0)                       // comment length
+            central.append(u16: 0)                       // disk number start
+            central.append(u16: entry.internalAttributes)
+            central.append(u32: entry.externalAttributes)
+            central.append(u32: localOffset)
+            central.append(nameData)
+            if !isDirectory { central.append(extra) }
+            count += 1
+        }
+
+        let centralOffset = UInt32(output.count)
+        output.append(central)
+        output.append(u32: ZipStructure.eocdSignature)
+        output.append(u16: 0)
+        output.append(u16: 0)
+        output.append(u16: UInt16(count))
+        output.append(u16: UInt16(count))
+        output.append(u32: UInt32(central.count))
+        output.append(u32: centralOffset)
+        output.append(u16: 0)
+        return output
+    }
+
+    /// salt | password verifier | ciphertext | truncated HMAC, per the AE spec.
+    private static func encryptAES(_ plaintext: Data, password: Data) throws -> Data {
+        let keyLength = 32  // AES-256
+        var salt = Data(count: 16)
+        let status = salt.withUnsafeMutableBytes { buffer in
+            SecRandomCopyBytes(kSecRandomDefault, 16, buffer.baseAddress!)
+        }
+        guard status == errSecSuccess else {
+            throw FprError.internalError("the system random number generator failed")
+        }
+
+        let derived = Crypto.pbkdf2SHA1(
+            password: password, salt: salt, iterations: 1000, length: keyLength * 2 + 2
+        )
+        let encryptionKey = Data(derived.prefix(keyLength))
+        let authenticationKey = Data(derived.dropFirst(keyLength).prefix(keyLength))
+        let verifier = Data(derived.suffix(2))
+
+        let ciphertext = try Crypto.winZipAESEncrypt(plaintext, key: encryptionKey)
+        let mac = Crypto.hmacSHA1(ciphertext, key: authenticationKey).prefix(10)
+
+        var payload = salt
+        payload.append(verifier)
+        payload.append(ciphertext)
+        payload.append(mac)
+        return payload
+    }
+
+    private static func aesExtraField(actualMethod: UInt16) -> Data {
+        var field = Data()
+        field.append(u16: 0x9901)
+        field.append(u16: 7)
+        field.append(u16: 2)                       // AE-2
+        field.append(Data("AE".utf8))
+        field.append(3)                            // 3 = AES-256
+        field.append(u16: actualMethod)
+        return field
     }
 
     public func detect(_ data: Data) throws -> Detection {

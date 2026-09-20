@@ -185,3 +185,13 @@ extension Crypto {
 
     static func sha512(_ data: Data) -> Data { Data(SHA512.hash(data: data)) }
 }
+
+extension Crypto {
+    /// AES-ECB over whole blocks, used to build the WinZip CTR keystream.
+    ///
+    /// CTR is its own inverse, so `winZipAESCrypt` both encrypts and decrypts;
+    /// this exists so the protect path reads as deliberately as the remove one.
+    static func winZipAESEncrypt(_ input: Data, key: Data) throws -> Data {
+        try winZipAESCrypt(input, key: key)
+    }
+}
