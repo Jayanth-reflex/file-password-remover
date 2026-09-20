@@ -27,6 +27,28 @@ class Engine {
         Format.LEGACY_OFFICE -> LegacyOfficeAdapter().remove(data, password)
     }
 
+    /**
+     * Write a copy of [data] protected with [password].
+     *
+     * Only PDF and ZIP can be protected. Every other format refuses rather than
+     * quietly handing back a copy with no encryption on it, which would be the
+     * most dangerous possible failure for this operation.
+     */
+    fun protect(data: ByteArray, password: String): ByteArray = when (sniff(data)) {
+        Format.PDF -> PdfAdapter().protect(data, password)
+        Format.ZIP -> ZipAdapter().protect(data, password)
+        Format.OOXML -> throw FprException.UnsupportedFormat(
+            "Adding protection to Office documents is not supported yet. This app can " +
+                "remove it, but not add it."
+        )
+        Format.SEVEN_ZIP -> throw FprException.UnsupportedFormat(
+            "Adding protection to 7-Zip archives is not supported yet."
+        )
+        Format.LEGACY_OFFICE -> throw FprException.UnsupportedFormat(
+            "Adding protection to Word/Excel 97-2003 files is not supported."
+        )
+    }
+
     fun sniff(data: ByteArray): Format {
         if (data.size < 8) throw FprException.CorruptFile("file is too small to identify")
 
