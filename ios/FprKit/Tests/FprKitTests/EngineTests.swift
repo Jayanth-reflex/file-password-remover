@@ -65,3 +65,34 @@ final class EngineTests: XCTestCase {
         }
     }
 }
+
+/// 7-Zip is not implemented on iOS. That has to be a clear, actionable message
+/// pointing somewhere useful -- not a vague failure and not a crash.
+final class SevenZipGapTests: XCTestCase {
+    func testIdentifiesSevenZipAndSaysItIsNotSupportedHere() throws {
+        let corpus = try VectorCorpus.load()
+        for id in ["7z-encrypted-data", "7z-encrypted-header"] {
+            let detection = try Engine().detect(try corpus.data(id))
+
+            XCTAssertEqual(detection.format, .sevenZip, "\(id) was not identified as 7-Zip")
+            XCTAssertEqual(detection.removability, .unsupported)
+            XCTAssertTrue(
+                detection.detail.contains("command-line"),
+                "the message should point somewhere useful, got: \(detection.detail)"
+            )
+        }
+    }
+
+    func testRemovingSevenZipFailsWithTheSameExplanationRatherThanACrash() throws {
+        let corpus = try VectorCorpus.load()
+        XCTAssertThrowsError(
+            try Engine().remove(try corpus.data("7z-encrypted-data"), password: corpus.correctPassword)
+        ) { error in
+            guard case .unsupportedFormat(let detail) = error as? FprError else {
+                return XCTFail("expected unsupportedFormat, got \(error)")
+            }
+            XCTAssertTrue(detail.contains("command-line"))
+            XCTAssertEqual((error as? FprError)?.exitCode, 5)
+        }
+    }
+}
