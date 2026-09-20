@@ -195,8 +195,78 @@ to claim the interfaces were tested. 40 tests added; overall coverage
 
 ## Node 15 — CI
 
-No failures. The `no-extras` job exists because the py7zr decision is only real
-if something checks it.
+The `no-extras` job exists because the py7zr decision is only real if something
+checks it.
+
+Nothing failed while the workflows were written, because nothing had run them.
+Publishing the repository and letting them run produced six failures, one of
+them a product defect. They are recorded here because a workflow that has never
+executed is a claim, not a control.
+
+### 15.1 `os.fsync` refuses a read-only descriptor on Windows
+
+**Found**: the Windows desktop-bundle job failed at the verification step of
+every `remove`. `atomic_write` re-opened its temporary file read-only purely to
+fsync it before the rename. On POSIX that is fine; on Windows `os.fsync` maps to
+`_commit`, which requires a writable handle and returns `EBADF` otherwise.
+
+**Fix**: `_fsync_path` opens `O_RDWR | O_BINARY`. The regression test monkeypatches
+`os.open` and asserts the `O_RDWR` flag, so it fails on Linux and macOS too
+rather than needing a Windows runner to catch a Windows bug.
+
+**Why it matters**: a shipped product defect that broke every Windows user, on
+the write path that the whole atomicity guarantee rests on. It was structurally
+invisible to a macOS-only development host.
+
+### 15.2 MSYS rewrote a path in an argument but not inside `python -c`
+
+**Found**: with 15.1 fixed, the Windows job still failed — the independent
+read-back received `/tmp/...` instead of a native path. Under Git Bash, MSYS
+converts POSIX paths in *arguments* to a Windows binary, and leaves the inside
+of a `-c` string alone.
+
+**Fix**: the path is passed through `argv` and read with `sys.argv[1]`.
+
+### 15.3 The performance test ran in all eight matrix jobs
+
+**Found**: the matrix appeared hung on Windows. The `slow` suite writes and
+encrypts 200 MiB — seconds on a local SSD, many minutes on a hosted runner —
+and it was running in every job.
+
+**Fix**: the matrix runs `-m "not slow"`; the performance suite has its own job
+on one runner; every job has `timeout-minutes`, so a hang now fails in minutes
+instead of burning the six-hour ceiling.
+
+### 15.4 `cosign` could not parse the image reference
+
+**Found**: `${{ github.repository }}` preserves the capital letter in the owner
+name, and OCI references must be lowercase.
+
+**Fix**: the reference is lowercased before signing.
+
+### 15.5 gitleaks flagged the fixture sample passwords
+
+**Found**: the literal sample passwords in `fpr/testing/fixtures.py` and
+`zipcrypto.py` look exactly like leaked credentials, because syntactically they
+are.
+
+**Fix**: `.gitleaks.toml` allowlists them by path *and* by literal, so a real
+secret added to either file is still caught.
+
+### 15.6 `pip-audit --strict` failed on the unpublished local package
+
+**Found**: the project is not on PyPI, so auditing the editable install had
+nothing to resolve against.
+
+**Fix**: `--skip-editable`, and `--strict` dropped from that step. The OSV API
+step remains the strict gate on the declared dependencies, which is what the
+audit was for.
+
+### 15.7 Not a defect: queued runs were cancelled
+
+Runs on `main` kept disappearing while queued. GitHub keeps only one *pending*
+run per concurrency group and cancels the rest; `cancel-in-progress` is already
+false for pushes. Recorded so the next person does not go looking for a bug.
 
 ## Node 16 — Build
 

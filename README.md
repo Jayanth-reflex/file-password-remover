@@ -9,7 +9,7 @@
 [![Release](https://img.shields.io/github/v/release/Jayanth-reflex/file-password-remover?sort=semver)](https://github.com/Jayanth-reflex/file-password-remover/releases)
 [![Python](https://img.shields.io/badge/python-3.10%20%E2%80%93%203.13-blue)](pyproject.toml)
 [![License](https://img.shields.io/badge/license-Apache--2.0-blue)](LICENSE)
-[![Tests](https://img.shields.io/badge/tests-276%20passing-brightgreen)](docs/reports/verification-report.md)
+[![Tests](https://img.shields.io/badge/tests-277%20passing-brightgreen)](docs/reports/verification-report.md)
 [![No network](https://img.shields.io/badge/network-none-success)](docs/adr/0002-local-only-no-backend.md)
 
 ```bash
@@ -228,7 +228,7 @@ cannot be proved good never reaches the name you asked for.
 
 | | |
 | :--- | :--- |
-| Tests | **276** — unit, integration, security, performance |
+| Tests | **277** — unit, integration, security, performance |
 | Coverage | 88 % |
 | Type checking | `mypy --strict`, zero issues |
 | Static analysis | `bandit`, zero findings |

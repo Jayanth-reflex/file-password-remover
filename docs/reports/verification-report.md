@@ -31,7 +31,7 @@ written to `artifacts/verification/`.
 | Lint | `ruff check .` | **pass** — no findings |
 | Format | `ruff format --check .` | **pass** — 98 files, including Python inside Markdown |
 | Types | `mypy` (`--strict`, 29 files) | **pass** — no issues |
-| Tests | `pytest -q --cov=fpr --cov=fpr_gui` | **pass** — **276 passed**, 88 % coverage |
+| Tests | `pytest -q --cov=fpr --cov=fpr_gui` | **pass** — **277 passed**, 88 % coverage |
 | Performance | `pytest -q -m slow` | **pass** — 3 passed in 4.14 s |
 | Security tests | `pytest -q tests/security -v` | **pass** — 46 passed |
 | Static analysis | `bandit -c pyproject.toml -r src` | **pass** — **0 findings** (0 high, 0 medium, 0 low) |
@@ -52,7 +52,7 @@ written to `artifacts/verification/`.
 | `tests/integration` | 115 | PDF, OOXML, ZIP, 7z and legacy Office end to end; engine behaviour; batch; the CLI in a real child process; the desktop window |
 | `tests/security` | 46 | Leak tests, abuse cases, the no-network guarantee |
 | `tests/perf` | 3 | Large PDF, 200 MiB archive, 100-file batch |
-| **Total** | **276** | |
+| **Total** | **277** | |
 
 ## Coverage
 
@@ -111,15 +111,18 @@ later build — see [L-23](known-limitations.md) on reproducibility.
 | Windows x86-64 | in CI | in CI | `.github/workflows/ci.yml` |
 | iOS / Android | **no** | **no** | not shipped — [ADR-0010](../adr/0010-no-mobile-app-this-release.md) |
 
-The CI workflows are written and parse, and every command they run was executed
-on this host. **They have not been executed on GitHub**, because this
-repository has no remote yet. That is the single largest gap between what is
-claimed and what has been observed, and it is stated here rather than implied
-by a green badge.
+The CI workflows now run on GitHub on every push. Running them found a
+Windows-only defect in `atomic_write` — `os.fsync` refuses a read-only
+descriptor there, so every atomic write failed — that no run on this macOS host
+could have surfaced. The Linux and Windows rows above are therefore backed by
+executed jobs, not by a workflow file that merely parses. What is still *not*
+covered: no human has driven the Linux or Windows desktop bundle by hand; CI
+starts it, decrypts a fixture with it and reads the output back, which is a
+smoke test rather than use.
 
 ## Failures encountered during the build
 
-Sixteen, all found by tests or by the build's own smoke checks, each with the
+Twenty-two, all found by tests or by the build's own smoke checks, each with the
 root cause and the fix recorded in
 [docs/graph/node-ledger.md](../graph/node-ledger.md). The ones that changed a
 design decision:
@@ -140,7 +143,6 @@ design decision:
 
 Stated so that nobody has to infer it:
 
-- The CI workflows have never run on GitHub.
 - Linux and Windows bundles have not been run by a human.
 - No bundle is signed or notarised.
 - The desktop window has not been tested with VoiceOver, Narrator or Orca.

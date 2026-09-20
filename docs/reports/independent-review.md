@@ -78,15 +78,31 @@ invite tests written to hit it — but it means the number needs the table in
 the [verification report](verification-report.md) beside it to be meaningful.
 Recorded as [L-04](known-limitations.md) and [L-05](known-limitations.md).
 
-### F-7 — CI has never run *(open, disclosed)*
+### F-7 — CI had never run *(resolved)*
 
-Three workflows exist, parse, and run commands that were each executed locally.
-None has ever executed on GitHub, because the repository has no remote. A
-reader could reasonably assume otherwise from the presence of
-`.github/workflows/`.
+Originally raised because the workflows existed, parsed, and ran commands that
+had only ever been executed locally — the repository had no remote, so nothing
+in `.github/workflows/` had been exercised by GitHub.
 
-Disclosed in the verification report's *Not verified* section and in the
-production-readiness checklist (gate 8, "partly met"). Not fixable from here.
+Resolved once the repository was published. All four workflows now run on
+GitHub, and running them found four defects that a local run could not surface
+by construction:
+
+| Defect | Found by | Fix |
+| --- | --- | --- |
+| `os.fsync` fails with `EBADF` on a read-only descriptor on Windows, so every atomic write failed there | the Windows desktop-bundle smoke test | `_fsync_path` opens `O_RDWR`; regression test asserts the flag on every platform |
+| MSYS rewrote a POSIX path in an argument but not inside a `python -c` string, so the bundle check received an unusable path | the same Windows job | the path is passed through `argv` |
+| `cosign` could not parse the image reference — `${{ github.repository }}` preserves the capital in the owner name | the container workflow | reference lowercased before signing |
+| The 200 MiB performance test ran in all eight matrix jobs and made the matrix appear hung on hosted Windows runners | the first full matrix run | matrix runs `-m "not slow"`; the performance suite has its own job, and every job has a `timeout-minutes` |
+
+Two configuration defects were fixed in the same pass: `gitleaks` flagged the
+sample passwords in the fixture generators (allowlisted by path and literal in
+`.gitleaks.toml`), and `pip-audit --strict` failed on the unpublished local
+package (`--skip-editable`; the OSV step remains the strict gate).
+
+The first of these is a **product** bug, not a CI bug. It shipped in the code
+and would have broken every Windows user. It is the clearest argument that this
+finding was worth raising.
 
 ### F-8 — "Verified" is narrower than it sounds *(accepted, documented)*
 
@@ -126,8 +142,11 @@ not prove*, which is the right place for it.
 
 The implementation matches its documentation, and where it falls short of the
 brief it says so in the place a reader would look. Four defects were found and
-fixed during the review (F-1 to F-5); three limitations were confirmed as
-accurately disclosed rather than fixed (F-6 to F-8).
+fixed during the review (F-1 to F-5); F-7 was resolved afterwards by
+publishing the repository and running the workflows; two limitations were
+confirmed as accurately disclosed rather than fixed (F-6 and F-8).
 
-The single most important caveat is **F-7**: the CI configuration has never
-run. Everything else has been executed and its output preserved.
+**F-7** has since been resolved: the workflows now run on GitHub, and doing so
+exposed a Windows-only product defect in `atomic_write` that no local run on
+this host could have found. Everything else has been executed and its output
+preserved.

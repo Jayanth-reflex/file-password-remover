@@ -53,7 +53,7 @@ First release.
 - Fixture generators written from the specifications — a CFB/OLE writer, an
   ECMA-376 agile encryptor and a ZipCrypto writer — so the Office and ZIP tests
   are cross-implementation rather than round trips.
-- 276 automated tests; ruff, mypy `--strict`, bandit, pip-audit and gitleaks in
+- 277 automated tests; ruff, mypy `--strict`, bandit, pip-audit and gitleaks in
   CI.
 
 ### Known limitations
