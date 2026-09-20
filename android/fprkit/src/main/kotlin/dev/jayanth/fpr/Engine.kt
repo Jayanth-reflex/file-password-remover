@@ -49,6 +49,68 @@ class Engine {
         )
     }
 
+    /**
+     * Evidence about a file, gathered by reading it back.
+     *
+     * This is what fills the hallmark row: every entry is read out of the
+     * bytes, never carried over from the operation that produced them. Pass
+     * [password] for a file that was just protected -- opening it is the only
+     * way to say anything about what is inside, and "it is encrypted" on its
+     * own would be satisfied by an empty encrypted file.
+     */
+    fun evidence(data: ByteArray, password: String? = null): Map<String, String> =
+        when (sniff(data)) {
+            Format.PDF -> pdfEvidence(data, password)
+            Format.ZIP, Format.OOXML -> zipEvidence(data, password)
+            Format.SEVEN_ZIP, Format.LEGACY_OFFICE -> emptyMap()
+        }
+
+    private fun pdfEvidence(data: ByteArray, password: String?): Map<String, String> {
+        val detection = PdfAdapter().detect(data)
+        val encrypted = detection.protection != Protection.NONE
+        val marks = linkedMapOf("encrypted" to encrypted.toString())
+        detection.algorithm?.let { marks["algorithm"] = it }
+
+        if (!encrypted) {
+            marks["pages"] = PdfAdapter().pageCount(data).toString()
+            return marks
+        }
+        if (password == null) return marks
+        val opened = PdfAdapter().remove(data, password)
+        marks["opens"] = "true"
+        marks["pages"] = PdfAdapter().pageCount(opened).toString()
+        return marks
+    }
+
+    private fun zipEvidence(data: ByteArray, password: String?): Map<String, String> {
+        val entries = ZipArchive.readCentralDirectory(data)
+        val encrypted = entries.any { it.isEncrypted }
+        val marks = linkedMapOf(
+            "encrypted" to encrypted.toString(),
+            "entries" to entries.size.toString(),
+        )
+
+        val readable = if (encrypted) {
+            if (password == null) return marks
+            runCatching { ZipAdapter().remove(data, password) }
+                .onSuccess { marks["opens"] = "true" }
+                .getOrNull()
+        } else {
+            data
+        } ?: return marks
+
+        val members = runCatching { ZipArchive.readMembers(readable) }.getOrNull() ?: return marks
+        // A digest over every member name and its contents, so a changed byte
+        // anywhere shows up as a changed mark.
+        val digest = java.security.MessageDigest.getInstance("SHA-256")
+        members.toSortedMap().forEach { (name, bytes) ->
+            digest.update(name.toByteArray(Charsets.UTF_8))
+            digest.update(bytes)
+        }
+        marks["digest"] = digest.digest().joinToString("") { "%02x".format(it) }.take(16)
+        return marks
+    }
+
     fun sniff(data: ByteArray): Format {
         if (data.size < 8) throw FprException.CorruptFile("file is too small to identify")
 
