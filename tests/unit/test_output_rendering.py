@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import dataclasses
 import io
 import json
 from pathlib import Path
@@ -94,12 +95,59 @@ def test_symbols_fall_back_to_words_on_a_limited_terminal() -> None:
 
 
 def test_result_shows_the_verification_evidence() -> None:
+    """The hallmark row: every checked property, as a caption over its value.
+
+    The evidence is what makes a success meaningful, so it is presented rather
+    than buried in a comma-separated tail.
+    """
     stream = FakeStream()
     Renderer(stream).result(_result())
     text = stream.getvalue()
-    assert "encrypted=false" in text
+    assert "ENCRYPTED" in text, "the hallmark captions name what was checked"
+    assert "PAGES" in text
+    assert "false" in text, "and the values sit under them"
     assert "unchanged" in text
     assert "an advisory" in text
+
+
+def test_hallmark_captions_and_values_line_up() -> None:
+    """A column whose value is wider than its caption must still align."""
+    stream = FakeStream()
+    Renderer(stream).result(_result())
+    lines = [line for line in stream.getvalue().splitlines() if "ENCRYPTED" in line]
+    assert lines, "expected a caption row"
+    captions = lines[0]
+    values = stream.getvalue().splitlines()[stream.getvalue().splitlines().index(captions) + 1]
+    assert values.index("false") == captions.index("ENCRYPTED"), "columns drifted"
+
+
+def test_hallmark_shortens_captions_but_never_values() -> None:
+    """The caption is a label; the value is evidence and must stay verbatim."""
+    base = _result()
+    result = dataclasses.replace(
+        base,
+        verification={
+            "encrypted": "false",
+            "content_digest": "456cf7bce5ff12ef",
+            "content_scope": "all 3 page(s)",
+        },
+    )
+    stream = FakeStream()
+    Renderer(stream).result(result)
+    text = stream.getvalue()
+
+    assert "DIGEST" in text, "content_digest is captioned as DIGEST"
+    assert "CONTENT_DIGEST" not in text
+    for value in result.verification.values():
+        assert value in text, f"value {value!r} was altered or dropped"
+
+
+def test_hallmark_rule_falls_back_to_ascii() -> None:
+    stream = FakeStream(encoding="ascii")
+    Renderer(stream).result(_result())
+    text = stream.getvalue()
+    assert "\u2500" not in text, "box drawing must not reach an ascii terminal"
+    assert "-" in text, "but the rule is still drawn"
 
 
 def test_json_result_is_machine_readable() -> None:

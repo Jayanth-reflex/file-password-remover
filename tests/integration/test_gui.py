@@ -76,6 +76,22 @@ def test_planned_output_is_shown_before_anything_is_written(app, pdf_encrypted: 
     assert not (pdf_encrypted.parent / "secret-unprotected.pdf").exists()
 
 
+def _hallmark(app) -> dict[str, str]:
+    """Read the hallmark row back as {caption: value}.
+
+    Captions are letter-spaced with thin spaces for display, which is stripped
+    here so tests assert on the word rather than the typography.
+    """
+    labels = [
+        child.cget("text")
+        for child in app.hallmark.winfo_children()
+        if child.winfo_class() == "TLabel"
+    ]
+    cleaned = [text.replace("\u2009", "") for text in labels]
+    # Built column by column, so children interleave caption, value, caption...
+    return dict(zip(cleaned[0::2], cleaned[1::2]))
+
+
 def test_a_successful_run_reports_the_verification_evidence(app, pdf_encrypted: Path) -> None:
     from ..conftest import SAMPLE_PASSWORD
 
@@ -86,9 +102,30 @@ def test_a_successful_run_reports_the_verification_evidence(app, pdf_encrypted: 
     _settle(app)
     status = app.status.cget("text")
     assert "Verified" in status
-    assert "encrypted=false" in status
     assert "original file was not changed" in status
     assert (pdf_encrypted.parent / "secret-unprotected.pdf").exists()
+
+    # The evidence itself lives in the hallmark row, not buried in the status
+    # sentence -- see docs/design/design-system.md.
+    marks = _hallmark(app)
+    assert marks["ENCRYPTED"] == "false"
+    assert marks["PAGES"] == "3"
+
+
+def test_the_hallmark_is_cleared_when_another_file_is_loaded(app, pdf_encrypted: Path) -> None:
+    """Stale evidence must never sit under a different file."""
+    from ..conftest import SAMPLE_PASSWORD
+
+    app.load(pdf_encrypted)
+    _settle(app)
+    app.password_var.set(SAMPLE_PASSWORD)
+    app.on_run()
+    _settle(app)
+    assert _hallmark(app), "expected evidence after a successful run"
+
+    app.load(pdf_encrypted)
+    _settle(app)
+    assert _hallmark(app) == {}, "evidence from the previous run is still on screen"
 
 
 def test_the_password_field_is_cleared_as_soon_as_the_run_starts(app, pdf_encrypted) -> None:

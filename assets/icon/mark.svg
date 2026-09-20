@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64" role="img" aria-label="File Password Remover">
+  <title>File Password Remover</title>
+  <!-- A hallmark punch: an F struck into a brass cut-corner cartouche, as a
+       maker's mark.
+       See docs/design/design-system.md. -->
+  <defs>
+    <linearGradient id="field" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#1E2126"/>
+      <stop offset="1" stop-color="#121417"/>
+    </linearGradient>
+    <mask id="struck">
+      <rect width="64" height="64" fill="#000"/>
+      <polygon points="19,9 45,9 52,16 52,48 45,55 19,55 12,48 12,16" fill="#fff"/>
+      <rect x="23" y="18" width="7" height="28" fill="#000"/>
+      <rect x="30" y="18" width="12" height="6.5" fill="#000"/>
+      <rect x="30" y="29" width="8" height="6.5" fill="#000"/>
+    </mask>
+  </defs>
+  <rect width="64" height="64" rx="14" fill="url(#field)"/>
+  <rect width="64" height="64" fill="#DEC48C" mask="url(#struck)"/>
+</svg>
