@@ -1,94 +1,227 @@
 <div align="center">
 
+<img src="docs/assets/desktop-verified.png" alt="The desktop app after unlocking a 12-page PDF, showing the verification line: encrypted=false, pages=12, content digest and scope" width="760">
+
 # File Password Remover
 
-**Unlock the files you own — on your own machine, with proof the result is intact.**
+### Unlock the files you own — on your machine, with proof the result is intact.
+
+*No uploads. No account. No telemetry. No network code at all.*
 
 [![CI](https://github.com/Jayanth-reflex/file-password-remover/actions/workflows/ci.yml/badge.svg)](https://github.com/Jayanth-reflex/file-password-remover/actions/workflows/ci.yml)
 [![Security](https://github.com/Jayanth-reflex/file-password-remover/actions/workflows/security.yml/badge.svg)](https://github.com/Jayanth-reflex/file-password-remover/actions/workflows/security.yml)
-[![Release](https://img.shields.io/github/v/release/Jayanth-reflex/file-password-remover?sort=semver)](https://github.com/Jayanth-reflex/file-password-remover/releases)
-[![Python](https://img.shields.io/badge/python-3.10%20%E2%80%93%203.13-blue)](pyproject.toml)
-[![License](https://img.shields.io/badge/license-Apache--2.0-blue)](LICENSE)
+[![Release](https://img.shields.io/github/v/release/Jayanth-reflex/file-password-remover?sort=semver&color=b4502a)](https://github.com/Jayanth-reflex/file-password-remover/releases/latest)
+[![Container](https://img.shields.io/badge/ghcr.io-signed-2f6b46?logo=docker&logoColor=white)](https://github.com/Jayanth-reflex/file-password-remover/pkgs/container/file-password-remover)
+
 [![Tests](https://img.shields.io/badge/tests-291%20passing-brightgreen)](docs/reports/verification-report.md)
-[![No network](https://img.shields.io/badge/network-none-success)](docs/adr/0002-local-only-no-backend.md)
+[![Platforms](https://img.shields.io/badge/CI-macOS%20%C2%B7%20Linux%20%C2%B7%20Windows-informational)](#platform-support)
+[![Python](https://img.shields.io/badge/python-3.10%20%E2%80%93%203.13-blue)](pyproject.toml)
+[![Network](https://img.shields.io/badge/network-none-success)](docs/adr/0002-local-only-no-backend.md)
+[![License](https://img.shields.io/badge/license-Apache--2.0-blue)](LICENSE)
+
+<br>
 
 ```bash
 pipx install git+https://github.com/Jayanth-reflex/file-password-remover
 fpr remove quarterly-report.pdf
 ```
 
+<sub><b><a href="#install">Install</a></b> · <b><a href="#the-60-second-tour">Tour</a></b> · <b><a href="#how-you-know-it-actually-worked">How it proves itself</a></b> · <b><a href="#supported-formats">Formats</a></b> · <b><a href="#documentation">Docs</a></b></sub>
+
 </div>
 
 ---
 
-You have a PDF, a spreadsheet or a ZIP that you have the password for, and you
-are tired of typing it. The usual answer is to upload the file — **and the
-password** — to a website you have never heard of.
+## The problem
 
-This does the same job locally. No server, no account, no telemetry. The
-package contains no network code at all, and there is a test that fails the
-build if anyone adds any.
+You have a PDF you know the password for. You are tired of typing it.
 
-<div align="center">
-<img src="docs/assets/desktop-verified.png" alt="The desktop app after unlocking a 12-page PDF, showing the verification line: encrypted=false, pages=12, content digest and scope" width="700">
-<br><em>The desktop app. That <code>Verified:</code> line is a read-back of the file that was just written — not a canned message.</em>
-</div>
+The usual answer is to upload the file — **and the password** — to a website you
+have never heard of, and hope.
+
+This does the same job on your machine. There is no server to trust, because
+there is no server. The package contains no network code at all, and a test
+parses every module and fails the build if anyone adds any.
+
+<table>
+<tr><th align="left"></th><th align="left">Online “unlock PDF” sites</th><th align="left"><code>fpr</code></th></tr>
+<tr><td>Your file goes</td><td>To their server</td><td><b>Nowhere.</b> It never leaves the disk</td></tr>
+<tr><td>Your password goes</td><td>To their server</td><td>Into a wipeable buffer, zeroed on exit</td></tr>
+<tr><td>Afterwards</td><td>Their retention policy</td><td>There is no “afterwards”</td></tr>
+<tr><td>Proof the output is intact</td><td>None</td><td>Page counts + content digests, compared</td></tr>
+<tr><td>Works offline / air-gapped</td><td>No</td><td>Yes</td></tr>
+<tr><td>Strips protection you can’t authenticate</td><td>Usually yes</td><td><b>No — and that is the point</b></td></tr>
+</table>
+
+That last row matters most. Most “unlockers” open a PDF with an **empty**
+password and re-save it without the permission flags. That is a bypass, not a
+decryption. This refuses, unless you supply the owner password and ask for it
+explicitly. ([ADR-0008](docs/adr/0008-owner-restriction-policy.md))
 
 ---
 
-## Why not just use an online unlocker?
+## The 60-second tour
 
-|  | Online "unlock PDF" sites | `fpr` |
-| --- | --- | --- |
-| Where your file goes | Their server | Nowhere. It never leaves the disk |
-| Where your password goes | Their server | A wipeable buffer in local memory |
-| What happens to the file afterwards | Their retention policy | Nothing; there is no "afterwards" |
-| Proof the output is intact | None | Page counts and content digests, compared before and after |
-| Works offline / air-gapped | No | Yes |
-| Cost per file | Freemium, then paid | None |
-| Will it strip protection you cannot authenticate? | Usually yes | **No — and that is the point** |
+**Look before you leap.** `inspect` needs no password and changes nothing:
 
-That last row is the one that matters. Most "unlockers" work by opening a PDF
-with an *empty* password and re-saving it without the permission flags. That is
-a bypass, not a decryption. This tool refuses to do it unless you supply the
-owner password — see [ADR-0008](docs/adr/0008-owner-restriction-policy.md).
+```console
+$ fpr inspect quarterly-report.pdf
+quarterly-report.pdf
+  format       PDF (pdf)
+  protection   user-password
+  algorithm    AES-256 (PDF 2.0, R6)
+  removable    removable
+  note         Encrypted. Supply the open (user) password or the owner password.
+```
 
-## What it does and does not do
+**Then unlock it.** The password is prompted for, never echoed, never stored:
 
-**Will** decrypt a file when you supply a password the file's own verifier
-accepts, then write a new, unencrypted copy.
+```console
+$ fpr remove quarterly-report.pdf
+Password:
+✓ /home/you/quarterly-report-unprotected.pdf
+  removed      user-password
+  algorithm    AES-256 (PDF 2.0, R6)
+  size         2.3 MiB -> 2.2 MiB in 0.41s
+  verified     encrypted=false, pages=12, content_digest=7c411878be0a3889, content_scope=all 12 page(s), docinfo_keys=/Producer,/Title, has_xmp=true
+  original     /home/you/quarterly-report.pdf (unchanged)
+```
 
-**Will not** recover, guess or brute-force a password. Will not strip
-permission flags off a document you cannot authenticate against. Will not touch
-DRM, Information Rights Management, or certificate-based encryption. These are
-enforced in code, not just promised in a README — run `fpr formats` to see the
-boundary, or read [the abuse cases](docs/security/abuse-cases.md), each of
-which has a test proving the refusal.
+That `verified` line is the whole point — see [below](#how-you-know-it-actually-worked).
+
+**A wrong password fails cleanly**, with no output file and a distinct exit code:
+
+```console
+$ fpr remove quarterly-report.pdf --password-stdin < wrong.txt
+✗ Incorrect password for this file.
+  Check the password (including keyboard layout and caps lock) and try again.
+$ echo $?
+3
+```
+
+No output file is created, nothing is partially written, and the tool does not
+offer to try again — because it has no way to try that is not guessing.
+
+<details>
+<summary><b>Batch mode, scripting and JSON</b></summary>
+
+<br>
+
+A whole folder, one password, machine-readable output:
+
+```bash
+fpr remove ~/archive --recursive --pattern '*.docx' --output-dir ./clean --json
+```
+
+Scripted, without the password touching `argv`, the environment or the disk:
+
+```bash
+printf '%s' "$PASSWORD" | fpr remove book.pdf --password-stdin
+```
+
+> **There is no `--password VALUE` flag.** Command lines are readable by every
+> process on the machine and land in your shell history. The option is parsed
+> only so the tool can tell you that, instead of failing with "unrecognised
+> argument". ([ADR-0007](docs/adr/0007-no-password-on-argv.md))
+
+Thirteen stable exit codes, so scripts can branch on *why* something failed:
+`3` wrong password, `5` corrupt input, `9` verification failed, and so on.
+Full table in the [CLI reference](docs/ops/cli.md).
+
+</details>
+
+<details>
+<summary><b>Prefer a window? <code>fpr-gui</code></b></summary>
+
+<br>
+
+<img src="docs/assets/desktop-ready.png" alt="The desktop app before processing, with a file selected and the password field focused" width="620">
+
+Drag a file in, type the password, watch the same verification line appear.
+Every control is keyboard-reachable; there is a test that walks the focus ring
+to prove it. The window has **not** been tested with a screen reader — if you
+rely on one, the CLI is the supported path
+([accessibility](docs/product/accessibility.md)).
+
+</details>
+
+---
+
+## How you know it actually worked
+
+Most tools print "Done" when the write call returns. That is not the same thing
+as the file being good — qpdf will silently *recover* a truncated PDF and hand
+back 3 pages where there were 12.
+
+So `fpr` never reports success on a write. It reports success on a **read-back**:
+
+```mermaid
+flowchart LR
+    A["Input file"] -->|capture invariants| B["pages · content digests<br/>per-entry SHA-256"]
+    A --> C["Decrypt into a private<br/>0600 temp file"]
+    C --> D["Re-open from disk<br/>with the format's normal reader"]
+    D --> E{"Still protected?"}
+    E -->|yes| X["Scrub the output<br/>exit 9"]
+    D --> F{"Invariants match?"}
+    B --> F
+    F -->|no| X
+    F -->|yes| G["fsync → os.replace → fsync dir"]
+    G --> H(["Success is printed here,<br/>and nowhere earlier"])
+```
+
+If either check fails, the output is scrubbed and the run exits `9`. **A file
+that cannot be proved good never reaches the name you asked for.**
+([ADR-0004](docs/adr/0004-verify-before-publish.md))
+
+> [!NOTE]
+> **Honest limit.** This proves *output matches input*. It cannot prove the
+> input was complete — a truncated source yields a faithful decryption of a
+> truncated document. Recorded as
+> [L-10](docs/reports/known-limitations.md), not glossed over.
+
+---
+
+## What it will and will not do
+
+| | |
+| :--- | :--- |
+| ✅ **Will** | Decrypt a file when you supply a password its own verifier accepts, and write a new, unencrypted copy |
+| ❌ **Will not** | Recover, guess or brute-force a password. No dictionary, no retry loop, no "recovery mode" |
+| ❌ **Will not** | Strip permission flags off a document you cannot authenticate against |
+| ❌ **Will not** | Touch DRM, Information Rights Management, or certificate-based encryption |
+
+These are enforced in code, not promised in a README. Every refusal has a test:
+[abuse cases](docs/security/abuse-cases.md). Run `fpr formats` to see the
+boundary from the tool itself.
 
 | Class of protection | Example | What happens |
 | :--- | :--- | :--- |
 | 🔓 **Content encryption** | PDF open password · `.docx` "Encrypt with Password" · AES `.zip` | Removed once the password validates |
-| 🔒 **Permission restrictions** | PDF with printing disabled and *no* open password | Removed **only** with the owner password and `--remove-restrictions` |
-| 🚫 **Editing restrictions** | `<w:documentProtection>` in Word, sheet protection in Excel | Reported and refused — the content is not encrypted, so removal would be a bypass |
+| 🔒 **Permission restrictions** | PDF with printing disabled and *no* open password | Removed **only** with the owner password **and** `--remove-restrictions` |
+| 🚫 **Editing restrictions** | `<w:documentProtection>`, Excel sheet protection | Reported and refused — the content isn't encrypted, so removal would be a bypass |
 | ⛔ **Rights management / DRM** | IRM, `Adobe.PubSec`, ebook DRM | Reported, never touched |
+
+---
 
 ## Supported formats
 
 | Format | Protection handled | Engine |
 | :--- | :--- | :--- |
 | **PDF** `.pdf` | Standard security handler R2–R6 — RC4-40, RC4-128, AES-128, AES-256 | pikepdf / qpdf |
-| **Word · Excel · PowerPoint** `.docx` `.xlsx` `.pptx` (+ 12 more) | ECMA-376 agile (Office 2010+) and standard (2007) | msoffcrypto-tool |
+| **Word · Excel · PowerPoint** `.docx` `.xlsx` `.pptx` *(+12 more)* | ECMA-376 agile (Office 2010+) and standard (2007) | msoffcrypto-tool |
 | **ZIP** `.zip` | WinZip AES-128/192/256, legacy ZipCrypto | pyzipper |
 | **7-Zip** `.7z` | AES-256 including encrypted headers | py7zr — [optional extra](docs/adr/0006-optional-lgpl-sevenzip-extra.md) |
-| **Legacy Office** `.doc` `.xls` `.ppt` | RC4 / CryptoAPI | msoffcrypto-tool — **experimental**, needs `--experimental` |
+| **Legacy Office** `.doc` `.xls` `.ppt` | RC4 / CryptoAPI — **experimental**, needs `--experimental` | msoffcrypto-tool |
 
-Full matrix, including everything deliberately unsupported and why:
-[docs/product/format-matrix.md](docs/product/format-matrix.md).
+Full matrix, including everything deliberately **un**supported and why:
+[format-matrix.md](docs/product/format-matrix.md).
+
+---
 
 ## Install
 
 <table>
-<tr><td width="50%">
+<tr><td width="50%" valign="top">
 
 **pipx** — isolated, just the commands
 
@@ -96,15 +229,15 @@ Full matrix, including everything deliberately unsupported and why:
 pipx install git+https://github.com/Jayanth-reflex/file-password-remover
 ```
 
-**pip** — also gives you the desktop app and the Python API
+**pip** — adds the desktop app and Python API
 
 ```bash
 pip install "file-password-remover[sevenzip] @ git+https://github.com/Jayanth-reflex/file-password-remover"
 ```
 
-</td><td width="50%">
+</td><td width="50%" valign="top">
 
-**Docker** — nothing installed, parsers sandboxed
+**Docker** — nothing installed, parsers contained
 
 ```bash
 docker run --rm -v "$PWD:/data" \
@@ -115,96 +248,46 @@ docker run --rm -v "$PWD:/data" \
 
 **Standalone** — no Python at all
 
-macOS, Linux and Windows bundles are on the
-[releases page](https://github.com/Jayanth-reflex/file-password-remover/releases).
+macOS, Linux and Windows bundles on the
+[releases page](https://github.com/Jayanth-reflex/file-password-remover/releases/latest).
 
 </td></tr>
 </table>
 
+Verify what you downloaded before running it:
+
+```bash
+shasum -a 256 -c SHA256SUMS
+```
+
+> [!NOTE]
 > **Not on PyPI yet.** `pip install file-password-remover` will be the install
-> once the project is published; the release workflow is already wired for it
-> via PyPI Trusted Publishing, and this line stays here until that has actually
-> happened. The name is reserved by nobody — including us — so do not trust a
-> package of that name appearing before this note is gone.
+> once published; the release workflow is already wired for it via PyPI Trusted
+> Publishing, and this note stays until that has actually happened. The name is
+> reserved by nobody — including us — so do not trust a package of that name
+> appearing before this note is gone.
 
-The standalone bundles are **unsigned**. Verify the checksum, and see
-[install.md](docs/ops/install.md) for exactly what macOS and Windows will say
-about that.
+> [!WARNING]
+> The standalone bundles are **unsigned**. macOS Gatekeeper and Windows
+> SmartScreen will say so. Signing needs an Apple Developer ID and a Windows
+> code-signing certificate this project does not hold —
+> [install.md](docs/ops/install.md) shows exactly what you will see, and
+> [release.md](docs/ops/release.md) has the steps for anyone who does.
 
-## Use it
-
-```console
-$ fpr inspect quarterly-report.pdf
-quarterly-report.pdf
-  format       PDF (pdf)
-  protection   user-password
-  algorithm    AES-256 (PDF 2.0, R6)
-  removable    removable
-  note         Encrypted. Supply the open (user) password or the owner password.
-
-$ fpr remove quarterly-report.pdf
-Password:
-✓ /home/you/quarterly-report-unprotected.pdf
-  removed      user-password
-  algorithm    AES-256 (PDF 2.0, R6)
-  size         2.3 MiB -> 2.2 MiB in 0.41s
-  verified     encrypted=false, pages=12, content_digest=7c411878be0a3889, content_scope=all 12 page(s)
-  original     /home/you/quarterly-report.pdf (unchanged)
-```
-
-A whole folder, one password, machine-readable:
-
-```bash
-fpr remove ~/archive --recursive --pattern '*.docx' --output-dir ./clean --json
-```
-
-Scripted, without the password ever touching `argv`, the environment or the disk:
-
-```bash
-printf '%s' "$PASSWORD" | fpr remove book.pdf --password-stdin
-```
-
-> **There is no `--password VALUE` flag.** Command lines are readable by every
-> process on the machine and land in your shell history, so the tool refuses
-> the idea and points you at the safe routes.
-> ([ADR-0007](docs/adr/0007-no-password-on-argv.md))
-
-Desktop app: `fpr-gui`. Full CLI reference, exit codes and recipes:
-[docs/ops/cli.md](docs/ops/cli.md).
-
-## How you know it actually worked
-
-Most tools print "Done" when the write call returns. That is not the same thing
-as the file being good — qpdf will silently *recover* a truncated PDF and hand
-back 3 pages where there were 12.
-
-So `fpr` never reports success on a write. It reports success on a **read-back**:
-
-```
-  1. decrypt into a private 0600 temp file, on the destination's own filesystem
-  2. re-open that file from disk with the format's normal reader
-  3. assert it is no longer protected
-  4. recompute content invariants — page counts, per-page content-stream
-     digests, per-entry SHA-256 — and compare with the input
-  5. only then: fsync, os.replace, fsync the directory
-```
-
-If step 3 or 4 fails, the output is scrubbed and the run exits `9`. A file that
-cannot be proved good never reaches the name you asked for.
-([ADR-0004](docs/adr/0004-verify-before-publish.md))
+---
 
 ## Security and privacy
 
 - **Nothing is uploaded.** Not configurable — there is no network code.
-  `tests/security/test_no_network.py` parses every module and fails the build
-  if a networking import appears, then blocks `socket.connect` and runs a real
+  `tests/security/test_no_network.py` parses every module and fails the build if
+  a networking import appears, then blocks `socket.connect` and runs a real
   removal to catch anything indirect.
 - **The password** lives in a wipeable buffer that refuses to be logged,
   pickled, copied or formatted, and is zeroed when the operation ends.
 - **Temporary files** are `0600` inside a `0700` directory on the output's own
   filesystem, overwritten and deleted on every path including failures — with
   the honest caveat that overwriting does not reliably erase on SSDs or
-  copy-on-write filesystems.
+  copy-on-write filesystems ([L-16](docs/reports/known-limitations.md)).
 - **The original** is opened read-only and never modified unless you pass
   `--in-place`, which still verifies before replacing.
 
@@ -214,6 +297,8 @@ cannot be proved good never reaches the name you asked for.
 [Privacy](PRIVACY.md) ·
 [Report a vulnerability](SECURITY.md)
 
+---
+
 ## Platform support
 
 | Platform | CLI | Desktop | Status |
@@ -221,19 +306,48 @@ cannot be proved good never reaches the name you asked for.
 | macOS 13+ (Apple silicon · Intel) | ✅ | ✅ | Built and tested |
 | Linux (glibc 2.28+) | ✅ | ✅ | Built and tested in CI |
 | Windows 10+ | ✅ | ✅ | Built and tested in CI |
-| Docker / air-gapped | ✅ | — | Image published to GHCR |
+| Docker / air-gapped | ✅ | — | Signed image on GHCR |
 | iOS · Android | — | — | **Not shipped.** [Why, and what a port would take](mobile/README.md) |
+
+<details>
+<summary><b>What running CI on three platforms actually caught</b></summary>
+
+<br>
+
+The project was developed on macOS. Publishing it and running the matrix found
+four defects in shipped code that a macOS host structurally could not express:
+
+| Defect | Effect |
+| :--- | :--- |
+| `os.fsync` refuses a read-only descriptor on Windows | **Every** atomic write failed there — the path the whole integrity guarantee rests on |
+| `isatty()` is true for `NUL` on Windows | Any service, scheduled task or `< NUL` redirect hung forever in `getpass` |
+| Windows reports locale *names*, not codes | Language detection produced `english`, so the message catalogue never loaded |
+| The test harness let children inherit the runner's stdin | Hid the second defect, and hung the CI matrix for 20 minutes with zero output |
+
+Each has a root cause, a fix and a regression test in the
+[build ledger](docs/graph/node-ledger.md) (15.1–15.10). This is the argument for
+the matrix existing at all.
+
+</details>
+
+---
 
 ## Project quality
 
-| | |
-| :--- | :--- |
-| Tests | **291** — unit, integration, security, performance |
-| Coverage | 88 % |
-| Type checking | `mypy --strict`, zero issues |
-| Static analysis | `bandit`, zero findings |
-| Dependencies | 9 pinned, **zero known advisories**, all permissively licensed |
-| Fixtures | Generated from the specs — the Office and ZIP tests decrypt files written by an *independent* implementation |
+<div align="center">
+
+| Tests | Coverage | Types | Static analysis | Dependencies |
+| :---: | :---: | :---: | :---: | :---: |
+| **291** | **88 %** | `mypy --strict` clean | `bandit` — 0 findings | 9 pinned · **0 advisories** |
+
+</div>
+
+The Office and ZIP tests are **cross-implementation**, not round trips: the
+fixtures are written by a CFB/OLE writer, an ECMA-376 agile encryptor and a
+ZipCrypto writer implemented in this repository *from the specifications*, then
+decrypted by the third-party libraries under test. A shared misunderstanding of
+the format would not slip through unnoticed.
+([ADR-0009](docs/adr/0009-own-fixture-generators.md))
 
 Reproduce the lot with one command:
 
@@ -241,10 +355,12 @@ Reproduce the lot with one command:
 bash scripts/run_verification.sh     # 16 gates, logs to artifacts/verification/
 ```
 
-Evidence, including what was **not** verified:
+Evidence — including what was **not** verified:
 [verification report](docs/reports/verification-report.md) ·
 [independent review](docs/reports/independent-review.md) ·
-[known limitations](docs/reports/known-limitations.md) (25 entries, with IDs)
+[known limitations](docs/reports/known-limitations.md) *(26 entries, with IDs)*
+
+---
 
 ## Documentation
 
@@ -259,14 +375,13 @@ Evidence, including what was **not** verified:
 | ♿ **Inclusion** | [Accessibility](docs/product/accessibility.md) · [Localization](docs/product/localization.md) |
 | 🛠 **Contributing** | [CONTRIBUTING.md](CONTRIBUTING.md) · [Build](docs/ops/build.md) · [Release](docs/ops/release.md) |
 
-Full map: [docs/README.md](docs/README.md).
-
-## Licence
-
-[Apache-2.0](LICENSE). Third-party components and their licences are in
-[NOTICE](NOTICE), analysed in
-[docs/research/01-dependency-license-analysis.md](docs/research/01-dependency-license-analysis.md).
+---
 
 <div align="center">
-<sub>Built because uploading a confidential document to a stranger's server to remove a password you already know is a bad trade.</sub>
+<sub>
+
+Apache-2.0 · Built to unlock files you already own.<br>
+If you do not have the password, this is not the tool you are looking for — and that is by design.
+
+</sub>
 </div>
