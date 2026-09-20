@@ -14,4 +14,4 @@ dependencyResolutionManagement {
 
 rootProject.name = "file-password-remover"
 include(":fprkit")
-// :app is added once the engine is green.
+include(":app")
