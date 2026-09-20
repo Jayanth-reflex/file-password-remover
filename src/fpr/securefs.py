@@ -4,6 +4,9 @@ Design rules enforced here
 --------------------------
 1. Decrypted bytes never land in a world-readable location. Temp material goes
    into a directory created with mode ``0o700``; files are created ``0o600``.
+   On Windows those mode bits are mostly inert -- ``os.chmod`` only toggles the
+   read-only attribute there -- but ``tempfile`` already creates files with an
+   ACL granting the creating user alone, which is the equivalent protection.
 2. The destination file is only ever created by ``os.replace`` of a fully
    written, fsync'd temporary file in the *same directory*, so a crash cannot
    leave a half-written "unprotected" file that looks complete.
@@ -145,8 +148,11 @@ def atomic_write(
         yield tmp
         # Durability: the data must be on disk before the rename, otherwise a
         # power loss can leave a correctly-named but empty file.
-        with tmp.open("rb") as fh:
-            os.fsync(fh.fileno())
+        #
+        # The handle has to be writable. On Windows os.fsync() is _commit(),
+        # which fails with EBADF on a read-only descriptor -- a read-only open
+        # here worked on POSIX and broke every Windows run.
+        _fsync_path(tmp)
         if dest.exists() and not overwrite:
             raise OutputExistsError(str(dest))
         os.replace(tmp, dest)
@@ -157,6 +163,20 @@ def atomic_write(
     finally:
         if tmp.exists():
             scrub_file(tmp)
+
+
+def _fsync_path(path: Path) -> None:
+    """Flush a file's contents to the physical device.
+
+    Opened read-write on purpose: ``os.fsync`` maps to ``_commit`` on Windows
+    and refuses a read-only descriptor.
+    """
+    flags = os.O_RDWR | getattr(os, "O_BINARY", 0)
+    fd = os.open(path, flags)
+    try:
+        os.fsync(fd)
+    finally:
+        os.close(fd)
 
 
 def _fsync_dir(path: Path) -> None:

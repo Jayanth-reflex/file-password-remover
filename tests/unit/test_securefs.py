@@ -87,6 +87,33 @@ def test_secure_tempdir_removes_nested_content() -> None:
     assert not recorded.exists()
 
 
+def test_durability_fsync_uses_a_writable_handle(tmp_path: Path, monkeypatch) -> None:
+    """os.fsync needs a writable descriptor on Windows.
+
+    A read-only open worked on POSIX and failed every Windows run with
+    ``OSError: [Errno 9] Bad file descriptor``, because os.fsync is _commit()
+    there. This asserts the flag on every platform so the bug cannot come back
+    on the one where it is invisible.
+    """
+    seen: list[int] = []
+    real_open = os.open
+
+    def recording(path, flags, *args, **kwargs):  # noqa: ANN001, ANN002, ANN003
+        seen.append(flags)
+        return real_open(path, flags, *args, **kwargs)
+
+    monkeypatch.setattr(os, "open", recording)
+    dest = tmp_path / "out.bin"
+    with atomic_write(dest) as tmp:
+        tmp.write_bytes(b"payload")
+
+    assert seen, "atomic_write never opened a descriptor to fsync"
+    assert any(flags & os.O_RDWR for flags in seen), (
+        f"fsync handle was not opened read-write; flags seen: {seen}"
+    )
+    assert dest.read_bytes() == b"payload"
+
+
 def test_scrub_file_zeroes_then_unlinks(tmp_path: Path) -> None:
     target = tmp_path / "secret.bin"
     target.write_bytes(b"A" * 4096)
