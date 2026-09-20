@@ -1,6 +1,6 @@
 <div align="center">
 
-<img src="docs/assets/desktop-verified.png" alt="The desktop app after unlocking a 12-page PDF, showing the verification line: encrypted=false, pages=12, content digest and scope" width="760">
+<img src="docs/assets/desktop-verified.png" alt="The desktop app after unlocking a 12-page PDF, showing the hallmark row: encrypted false, pages 12, content digest and scope" width="760">
 
 # File Password Remover
 
@@ -79,15 +79,45 @@ quarterly-report.pdf
 ```console
 $ fpr remove quarterly-report.pdf
 Password:
-✓ /home/you/quarterly-report-unprotected.pdf
-  removed      user-password
-  algorithm    AES-256 (PDF 2.0, R6)
-  size         2.3 MiB -> 2.2 MiB in 0.41s
-  verified     encrypted=false, pages=12, content_digest=7c411878be0a3889, content_scope=all 12 page(s), docinfo_keys=/Producer,/Title, has_xmp=true
-  original     /home/you/quarterly-report.pdf (unchanged)
+✓ VERIFIED  quarterly-report-unprotected.pdf
+   removed     user-password
+   algorithm   AES-256 (PDF 2.0, R6)
+   size        2.3 MiB → 2.2 MiB · 0.41s
+
+   ENCRYPTED  PAGES  DIGEST            SCOPE            DOCINFO           XMP
+   false      12     7c411878be0a3889  all 12 page(s)   /Producer,/Title  true
+   ──────────────────────────────────────────────
+
+   saved to    /home/you/quarterly-report-unprotected.pdf
+   original    /home/you/quarterly-report.pdf (unchanged)
 ```
 
-That `verified` line is the whole point — see [below](#how-you-know-it-actually-worked).
+That row of marks is the whole point — see [below](#how-you-know-it-actually-worked).
+
+**Or go the other way.** `protect` locks a file that has no password yet, with
+one you choose or one it generates:
+
+```console
+$ fpr protect notes.pdf --generate
+✓ PROTECTED  notes-protected.pdf
+   applied     user-password
+   algorithm   AES-256 (PDF 2.0, R6)
+
+   ENCRYPTED  OPENS  PAGES  DIGEST            SCOPE
+   true       true   3      456cf7bce5ff12ef  all 3 page(s)
+   ──────────────────────────────────────────────
+
+   PASSWORD
+   w5zd-mzy4-d6g8-s4g5-npvk
+   Save this now. It is shown once, and this tool cannot recover it.
+```
+
+> [!WARNING]
+> **A generated password is the only copy that will ever exist.** This tool
+> refuses to crack, which is the point of it — and that means it is exactly the
+> wrong tool for getting back into a file whose password you lost. Use
+> `--password-out FILE` to write it straight to a `0600` file instead of the
+> terminal, which keeps scrollback.
 
 **A wrong password fails cleanly**, with no output file and a distinct exit code:
 
@@ -135,7 +165,13 @@ Full table in the [CLI reference](docs/ops/cli.md).
 
 <br>
 
-<img src="docs/assets/desktop-ready.png" alt="The desktop app before processing, with a file selected and the password field focused" width="620">
+<img src="docs/assets/desktop-ready.png" alt="The desktop app with an encrypted PDF selected, showing its format, protection and algorithm" width="620">
+
+<br>
+
+<img src="docs/assets/desktop-protected.png" alt="The desktop app after protecting a file, showing the hallmark row and the generated password" width="620">
+
+<sub>Left to right in the marks: what was checked, and what came back. The password shown is one the tool generated for a file it really locked.</sub>
 
 Drag a file in, type the password, watch the same verification line appear.
 Every control is keyboard-reachable; there is a test that walks the focus ring
@@ -186,7 +222,9 @@ that cannot be proved good never reaches the name you asked for.**
 | | |
 | :--- | :--- |
 | ✅ **Will** | Decrypt a file when you supply a password its own verifier accepts, and write a new, unencrypted copy |
+| ✅ **Will** | Add a password to a file that has none, with one you choose or one it generates, and prove the result opens |
 | ❌ **Will not** | Recover, guess or brute-force a password. No dictionary, no retry loop, no "recovery mode" |
+| ❌ **Will not** | Encrypt in place, encrypt a batch in one go, or write a locked file without showing you the password |
 | ❌ **Will not** | Strip permission flags off a document you cannot authenticate against |
 | ❌ **Will not** | Touch DRM, Information Rights Management, or certificate-based encryption |
 

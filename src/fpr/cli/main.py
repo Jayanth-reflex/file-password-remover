@@ -373,7 +373,11 @@ def _cmd_formats(renderer: Renderer) -> int:
         return int(ExitCode.OK)
     renderer.line("Supported formats")
     for row in rows:
-        renderer.line(f"  {row['id']:<14} {row['name']}")
+        # Say which direction each format works in: removing protection is
+        # supported everywhere, adding it is not, and guessing wrong about that
+        # is how someone ends up with an unencrypted copy they thought was safe.
+        directions = "remove" + (" + protect" if row["can_protect"] == "yes" else "")
+        renderer.line(f"  {row['id']:<14} {row['name']}  ({directions})")
         renderer.line(f"  {'':<14} {row['extensions']}")
     renderer.line()
     renderer.line("Not supported, by design")
