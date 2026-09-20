@@ -110,7 +110,7 @@ offer to try again — because it has no way to try that is not guessing.
 A whole folder, one password, machine-readable output:
 
 ```bash
-fpr remove ~/archive --recursive --pattern '*.docx' --output-dir ./clean --json
+fpr --json remove ~/archive --recursive --pattern '*.docx' --output-dir ./clean
 ```
 
 Scripted, without the password touching `argv`, the environment or the disk:
@@ -302,16 +302,38 @@ shasum -a 256 -c SHA256SUMS      # macOS / Linux
 certutil -hashfile fpr.zip SHA256 # Windows, compare against SHA256SUMS
 ```
 
+### 📱 iOS and Android
+
+Both apps exist, are built from this repository, and are tested against the same
+encrypted files as the CLI. Neither is in a store: that needs a paid Apple
+Developer Program membership and a Play Console account, which this project does
+not have. So they are sideloaded, and they say so.
+
+| | How to install | What you get |
+| :--- | :--- | :--- |
+| 🤖 **Android** | Download `file-password-remover-android-debug.apk` from the [latest release](https://github.com/Jayanth-reflex/file-password-remover/releases/latest) → allow installing from your browser → open it. Or `adb install <file>.apk`. | Debug-signed APK. Full format parity with the CLI. |
+| 🍏 **iOS** | Open `ios/FilePasswordRemover.xcodeproj` in Xcode, select your device, press Run. A free Apple ID works; the app lasts 7 days before it needs re-running. | Development-signed. Everything except 7-Zip. |
+
 > [!NOTE]
-> **📱 iOS and Android: not shipped, on purpose — not "coming soon".** There is
-> no APK and no app-store build to fabricate a link for. Decrypting a file
-> requires holding the plaintext password and the plaintext file in memory at
-> the same time; on a general-purpose mobile OS that boundary is much harder to
-> defend than on desktop, and this project does not ship a security tool it
-> cannot back with the same verification guarantee. The reasoning and what a
-> real port would require: [ADR-0010](docs/adr/0010-no-mobile-app-this-release.md).
-> The CLI does run under Termux (Android) and a-Shell/iSH (iOS) as a
-> workaround — see [mobile/README.md](mobile/README.md).
+> **The APK is attached from the next tagged release onward.** The release
+> workflow builds and tests it, but releases already published predate that, so
+> `releases/latest` will not have it until the next tag. Until then, build it
+> with `cd android && gradle :app:assembleDebug` — the same command CI runs.
+
+> [!IMPORTANT]
+> **The apps are not identical to the CLI.** 7-Zip works on Android and **not on
+> iOS** — Android gets it from Apache Commons Compress, and iOS has no equivalent
+> library, so shipping it there means hand-writing an LZMA decoder. The iOS app
+> says so when handed a `.7z` rather than failing vaguely. Legacy `.doc`/`.xls`
+> is detection-only on both. Full table under [Platform support](#platform-support).
+
+The Android app declares **no `INTERNET` permission**, so the operating system
+blocks network access outright — the "your files never leave the device" claim is
+enforced by the platform there, not merely asserted. An instrumented test checks
+that the permission really is denied.
+
+Design notes and the reasoning behind shipping this way:
+[ADR-0011](docs/adr/0011-ship-mobile-apps-verified-not-published.md).
 
 > [!NOTE]
 > **Not on PyPI yet.** `pip install file-password-remover` (no `git+`) will be
@@ -361,7 +383,18 @@ certutil -hashfile fpr.zip SHA256 # Windows, compare against SHA256SUMS
 | Linux (glibc 2.28+) | ✅ | ✅ | Built and tested in CI |
 | Windows 10+ | ✅ | ✅ | Built and tested in CI |
 | Docker / air-gapped | ✅ | — | Signed image on GHCR |
-| iOS · Android | — | — | **Not shipped.** [Why, and what a port would take](mobile/README.md) |
+| Android 8+ | ✅ | ✅ app | Built in CI; engine tested on a real ART runtime |
+| iOS 17+ | ✅ | ✅ app | Built and verified on the iOS Simulator |
+
+**Format coverage is not identical across platforms:**
+
+| Format | CLI | Android | iOS |
+| :--- | :---: | :---: | :---: |
+| PDF (R2–R6, RC4 → AES-256) | ✅ | ✅ | ✅ |
+| Office `.docx`/`.xlsx`/`.pptx` (ECMA-376 agile) | ✅ | ✅ | ✅ |
+| ZIP (AES-128/192/256, ZipCrypto) | ✅ | ✅ | ✅ |
+| 7-Zip (AES-256, incl. encrypted header) | ✅ | ✅ | ❌ |
+| Legacy `.doc`/`.xls` | detect only | detect only | detect only |
 
 <details>
 <summary><b>What running CI on three platforms actually caught</b></summary>
@@ -425,7 +458,7 @@ access can drive it directly; nothing here requires MCP or a special adapter.
 ```bash
 # machine-readable, and the password never touches argv, the shell history
 # or the environment — pipe it from wherever your agent's secret actually lives
-printf '%s' "$PASSWORD" | fpr remove report.pdf --password-stdin --json
+printf '%s' "$PASSWORD" | fpr --json remove report.pdf --password-stdin
 ```
 
 Three things an agent (or the person prompting it) needs to know before using

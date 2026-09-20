@@ -14,3 +14,11 @@ htmlcov/
 # Generated fixtures and verification artifacts are reproducible; keep them out of git.
 tests/fixtures/generated/
 artifacts/
+
+# Generated cross-language test-vector corpus
+build/vectors/
+android/.gradle/
+android/build/
+android/*/build/
+android/local.properties
+build/ios-dd/

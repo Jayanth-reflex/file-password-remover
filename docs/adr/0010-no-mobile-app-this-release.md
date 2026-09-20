@@ -1,6 +1,13 @@
 # ADR-0010: Ship no mobile app rather than an unverified one
 
-**Status**: Accepted · **Date**: 2026-09-19 · **Owner**: Product / Release
+**Status**: Superseded by [ADR-0011](0011-ship-mobile-apps-verified-not-published.md) · **Date**: 2026-09-19 · **Owner**: Product / Release
+
+> This decision was correct for the host it was written on, which had no
+> Android SDK, no Gradle and no signing identity. Those are now present, and
+> [ADR-0011](0011-ship-mobile-apps-verified-not-published.md) ships the apps.
+> The reasoning below is kept because the *standard* it applies -- do not
+> claim a platform you have not built and run -- is the standard ADR-0011
+> is held to as well.
 
 ## Context
 
