@@ -1,0 +1,49 @@
+name: Format support request
+description: Ask for a file format or protection scheme to be supported
+labels: ["format"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Before filing: run `fpr formats`. Some formats are refused deliberately
+        rather than missing — editing restrictions, DRM, RAR and
+        certificate-based encryption are all documented decisions with reasons,
+        in [docs/product/format-matrix.md](https://github.com/Jayanth-reflex/file-password-remover/blob/main/docs/product/format-matrix.md).
+
+        A format only ships once it has a **fixture generator** — code that
+        produces a valid protected sample — because a format without one cannot
+        be tested, and an untested decryption path does not get to look
+        finished.
+  - type: input
+    id: format
+    attributes:
+      label: Format and extension
+      placeholder: "e.g. ODF text document (.odt)"
+    validations:
+      required: true
+  - type: input
+    id: scheme
+    attributes:
+      label: Protection scheme
+      placeholder: "e.g. ODF 1.2 package encryption, PBKDF2 + AES-256-CBC"
+    validations:
+      required: true
+  - type: textarea
+    id: encrypted
+    attributes:
+      label: Is the content actually encrypted?
+      description: >
+        Or is it a flag asking software to behave? The tool removes encryption
+        you hold the password for; it refuses to strip restrictions it cannot
+        authenticate against.
+    validations:
+      required: true
+  - type: textarea
+    id: fixture
+    attributes:
+      label: How could a sample be generated?
+      description: >
+        An open-source library, a documented spec, or a script. "Attach a real
+        file" is not an option.
+    validations:
+      required: true

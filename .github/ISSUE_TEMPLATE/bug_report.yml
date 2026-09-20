@@ -1,0 +1,65 @@
+name: Bug report
+description: Something behaved incorrectly
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        **Please do not attach a real protected document.** Generate a sample
+        that reproduces the problem instead — it takes one command and it means
+        nobody has to handle your data:
+
+        ```python
+        from pathlib import Path
+        from fpr.testing import fixtures as F
+        Path("sample.pdf").write_bytes(F.make_pdf(F.PdfSpec(user="pw", owner="ow")))
+        ```
+
+        If the bug only happens with a file you cannot share, describe its shape
+        instead: how it was produced, roughly how large, how many pages/entries,
+        and what `fpr inspect` reports about it.
+
+        For anything affecting the confidentiality of a password or a document,
+        use a [private security advisory](https://github.com/Jayanth-reflex/file-password-remover/security/advisories/new)
+        rather than this form.
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened
+      description: What you ran, and what it did.
+      placeholder: |
+        $ fpr remove report.pdf
+        ...
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: What you expected instead
+    validations:
+      required: true
+  - type: textarea
+    id: version
+    attributes:
+      label: Output of `fpr version`
+      description: This reports the tool, Python, platform and every decryption dependency.
+      render: text
+    validations:
+      required: true
+  - type: dropdown
+    id: install
+    attributes:
+      label: How it was installed
+      options:
+        - pip
+        - pipx
+        - Docker image (GHCR)
+        - Standalone bundle from Releases
+        - From source
+    validations:
+      required: true
+  - type: textarea
+    id: extra
+    attributes:
+      label: Anything else
+      description: Output of `fpr inspect` on the file, if it is relevant.

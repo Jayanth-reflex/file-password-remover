@@ -80,6 +80,17 @@ Conventional commits (`feat:`, `fix:`, `docs:`, `test:`, `refactor:`,
 `chore:`). One logical change per commit. A PR that touches a security control
 must say which one and which test covers it.
 
-## Reporting a security issue
+## Filing something
 
-Do not open a public issue. See [SECURITY.md](SECURITY.md).
+- **Bug** or **format request**: use the issue templates, which ask for the
+  things that are actually needed (`fpr version`, how it was installed, and —
+  for a format — how a sample could be *generated*, because no real document
+  should ever be attached).
+- **Security issue**: do not open a public issue. See [SECURITY.md](SECURITY.md).
+  Note that a policy bypass or a false success counts as a security issue here,
+  even though neither exposes anyone's data.
+- **Pull request**: the template's checklist is short and every item is load
+  bearing.
+
+Everyone taking part is expected to follow the
+[code of conduct](CODE_OF_CONDUCT.md).

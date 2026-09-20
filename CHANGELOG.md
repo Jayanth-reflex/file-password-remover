@@ -4,7 +4,7 @@ All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project uses
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [1.0.0] — 2026-09-19
+## [1.0.0] — 2026-09-20
 
 First release.
 
@@ -36,6 +36,14 @@ First release.
   is refused with an explanation.
 - `fpr-gui`, a Tkinter desktop window over the same engine.
 - A documented Python API (`fpr.inspect`, `fpr.remove`).
+
+**Distribution**
+- Container image published to GitHub Container Registry, built for amd64 and
+  arm64, running as a non-root user and signed with cosign keyless signing. The
+  publish workflow decrypts a PDF, a DOCX and a ZIP *inside the image* and
+  checks that a wrong password still exits 3 before anything is pushed.
+- Standalone macOS, Linux and Windows bundles built by CI, each smoke-tested by
+  decrypting a generated fixture with the frozen binary.
 
 **Project**
 - Threat model, abuse-case analysis, security design and privacy statement.

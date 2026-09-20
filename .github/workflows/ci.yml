@@ -11,7 +11,10 @@ permissions:
 
 concurrency:
   group: ci-${{ github.ref }}
-  cancel-in-progress: true
+  # Supersede outdated PR pushes, but never cancel a run on main: those runs
+  # are the evidence a release points at, and a half-cancelled matrix is worse
+  # than a slow one.
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 env:
   PYTHONDONTWRITEBYTECODE: "1"

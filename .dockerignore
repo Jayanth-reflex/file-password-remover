@@ -1,0 +1,17 @@
+# Keep the build context to what the wheel actually needs.
+.git
+.github
+.venv
+.mypy_cache
+.pytest_cache
+.ruff_cache
+artifacts
+build
+dist
+docs
+mobile
+packaging
+scripts
+tests
+*.md
+!README.md

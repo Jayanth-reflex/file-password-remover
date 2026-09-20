@@ -1,0 +1,180 @@
+name: Container
+
+on:
+  push:
+    branches: [main]
+    tags: ["v*"]
+  pull_request:
+    paths:
+      - Dockerfile
+      - .dockerignore
+      - .github/workflows/container.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  packages: write
+  id-token: write   # keyless signing with cosign
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE: ${{ github.repository }}
+
+concurrency:
+  group: container-${{ github.ref }}
+  # Supersede outdated PR pushes, but never cancel a run on main: those runs
+  # are the evidence a release points at, and a half-cancelled matrix is worse
+  # than a slow one.
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  build:
+    name: build, prove it works, publish
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: docker/setup-qemu-action@v3
+      - uses: docker/setup-buildx-action@v3
+
+      # ------------------------------------------------------------------
+      # Build for this runner's architecture first and load it locally, so the
+      # image can actually be RUN before anything is published. A multi-arch
+      # manifest cannot be loaded into the local daemon, so the smoke test has
+      # to happen on a single-arch build.
+      # ------------------------------------------------------------------
+      - name: Build (amd64, local)
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          load: true
+          tags: fpr:smoke
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Prove the image decrypts a real file
+        run: |
+          set -euo pipefail
+          work="$(mktemp -d)"
+          # The image runs as uid 10001, which is not the runner's user, so the
+          # mounted directory has to be writable by it. Host users hit the same
+          # thing and solve it with --user; that form is tested below.
+          chmod 0777 "$work"
+
+          # Generate a protected fixture with the image's own library, so the
+          # test needs nothing installed on the runner.
+          docker run --rm -v "$work:/data" --entrypoint python fpr:smoke - <<'PY'
+          from pathlib import Path
+          from fpr.testing import fixtures as F
+          out = Path("/data")
+          (out / "sample.pdf").write_bytes(
+              F.make_pdf(F.PdfSpec(user="container-smoke", owner="container-owner"))
+          )
+          (out / "sample.docx").write_bytes(F.make_encrypted_ooxml(F.make_docx()))
+          (out / "sample.zip").write_bytes(F.make_zip_aes(password="container-smoke"))
+          print("fixtures written")
+          PY
+
+          docker run --rm fpr:smoke version
+          docker run --rm fpr:smoke formats > /dev/null
+          docker run --rm -v "$work:/data" fpr:smoke inspect /data/sample.pdf
+
+          printf '%s' 'container-smoke' | docker run --rm -i -v "$work:/data" \
+            fpr:smoke remove /data/sample.pdf --password-stdin
+          printf '%s' 'container-smoke' | docker run --rm -i -v "$work:/data" \
+            fpr:smoke remove /data/sample.zip --password-stdin
+          printf '%s' 'correct horse battery staple' | docker run --rm -i -v "$work:/data" \
+            fpr:smoke remove /data/sample.docx --password-stdin
+
+          for f in sample-unprotected.pdf sample-unprotected.zip sample-unprotected.docx; do
+            test -f "$work/$f" || { echo "image produced no $f" >&2; exit 1; }
+          done
+
+          # A wrong password must still exit 3 and write nothing.
+          set +e
+          printf '%s' 'wrong' | docker run --rm -i -v "$work:/data" \
+            fpr:smoke remove /data/sample.pdf --password-stdin -o /data/nope.pdf >/dev/null 2>&1
+          code=$?
+          set -e
+          [ "$code" -eq 3 ] || { echo "expected exit 3, got $code" >&2; exit 1; }
+          [ ! -f "$work/nope.pdf" ] || { echo "output written for a wrong password" >&2; exit 1; }
+
+          # The form a host user actually needs, so output files belong to them.
+          owned="$(mktemp -d)"
+          docker run --rm -v "$work:/in" -v "$owned:/out" --user "$(id -u):$(id -g)" \
+            fpr:smoke inspect /in/sample.pdf > /dev/null
+          printf '%s' 'container-smoke' | docker run --rm -i \
+            -v "$work:/in" -v "$owned:/out" --user "$(id -u):$(id -g)" \
+            fpr:smoke remove /in/sample.pdf --password-stdin -o /out/owned.pdf
+          test -f "$owned/owned.pdf" || { echo "--user form wrote nothing" >&2; exit 1; }
+          test -O "$owned/owned.pdf" || { echo "output not owned by the host user" >&2; exit 1; }
+
+          echo "container verified: three formats decrypted, wrong password refused, --user form writes host-owned files"
+
+      - name: The image must not carry the LGPL optional extra
+        run: |
+          if docker run --rm --entrypoint python fpr:smoke -c "import py7zr" 2>/dev/null; then
+            echo "py7zr is in the image; it must stay an opt-in extra (ADR-0006)" >&2
+            exit 1
+          fi
+          echo "py7zr absent, as intended"
+
+      - name: The image must not run as root
+        run: |
+          uid="$(docker run --rm --entrypoint id fpr:smoke -u)"
+          [ "$uid" != "0" ] || { echo "image runs as root" >&2; exit 1; }
+          echo "runs as uid $uid"
+
+      # ------------------------------------------------------------------
+      # Only now, with a proven image, build the multi-arch manifest and push.
+      # ------------------------------------------------------------------
+      - name: Log in to GHCR
+        if: github.event_name != 'pull_request'
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Tags and labels
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE }}
+          tags: |
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=semver,pattern={{major}}
+            type=raw,value=latest,enable={{is_default_branch}}
+            type=sha,format=short
+
+      - name: Build and push (amd64 + arm64)
+        id: push
+        if: github.event_name != 'pull_request'
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          platforms: linux/amd64,linux/arm64
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          provenance: mode=max
+          sbom: true
+
+      - name: Install cosign
+        if: github.event_name != 'pull_request'
+        uses: sigstore/cosign-installer@v3
+
+      - name: Sign the published image (keyless)
+        if: github.event_name != 'pull_request'
+        env:
+          DIGEST: ${{ steps.push.outputs.digest }}
+        run: |
+          # Keyless signing: the identity is this workflow, recorded in the
+          # public Rekor transparency log. Verify with:
+          #   cosign verify ghcr.io/jayanth-reflex/file-password-remover:latest \
+          #     --certificate-identity-regexp '^https://github.com/Jayanth-reflex/file-password-remover/' \
+          #     --certificate-oidc-issuer https://token.actions.githubusercontent.com
+          cosign sign --yes "${REGISTRY}/${IMAGE}@${DIGEST}"

@@ -37,6 +37,62 @@ pip install pip-tools
 pip-compile --generate-hashes --output-file requirements.lock pyproject.toml
 ```
 
+## Docker
+
+The image exists because the [threat model](../security/threat-model.md)'s R-08
+says the parsers are not sandboxed and recommends processing untrusted files in
+a container. This is that container.
+
+```bash
+docker pull ghcr.io/jayanth-reflex/file-password-remover:latest
+```
+
+Pass `--user` so the output belongs to you rather than to the image's uid, and
+mount the directory you are working in:
+
+```bash
+# Inspect -- no password needed, nothing written
+docker run --rm -v "$PWD:/data" --user "$(id -u):$(id -g)" \
+  ghcr.io/jayanth-reflex/file-password-remover inspect /data/report.pdf
+
+# Remove -- the password goes in over stdin, never in argv
+printf '%s' "$PASSWORD" | docker run --rm -i -v "$PWD:/data" \
+  --user "$(id -u):$(id -g)" \
+  ghcr.io/jayanth-reflex/file-password-remover \
+  remove /data/report.pdf --password-stdin
+```
+
+Add `--network none` to make the "it never uploads anything" claim something
+the kernel enforces rather than something you take on trust:
+
+```bash
+docker run --rm --network none -v "$PWD:/data" --user "$(id -u):$(id -g)" \
+  ghcr.io/jayanth-reflex/file-password-remover inspect /data/report.pdf
+```
+
+The image runs as a non-root user, contains no build toolchain, and
+deliberately omits `py7zr`, so `.7z` is not supported inside it
+([ADR-0006](../adr/0006-optional-lgpl-sevenzip-extra.md)). If you need it:
+
+```dockerfile
+FROM ghcr.io/jayanth-reflex/file-password-remover
+USER root
+RUN pip install --no-cache-dir py7zr
+USER fpr
+```
+
+### Verifying the image
+
+Images are built, run and *tested* before they are pushed — the workflow
+decrypts a PDF, a DOCX and a ZIP inside the image and checks that a wrong
+password still exits 3 — then signed with cosign keyless signing:
+
+```bash
+cosign verify ghcr.io/jayanth-reflex/file-password-remover:latest \
+  --certificate-identity-regexp '^https://github.com/Jayanth-reflex/file-password-remover/' \
+  --certificate-oidc-issuer https://token.actions.githubusercontent.com
+```
+
 ## Standalone bundle (no Python needed)
 
 Download the archive for your platform from the

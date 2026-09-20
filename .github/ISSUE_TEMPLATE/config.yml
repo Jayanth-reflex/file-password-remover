@@ -1,0 +1,10 @@
+blank_issues_enabled: true
+contact_links:
+  - name: Security vulnerability
+    url: https://github.com/Jayanth-reflex/file-password-remover/security/advisories/new
+    about: >
+      Report privately. This includes policy bypasses and false successes, not
+      only memory-safety issues -- see SECURITY.md for what counts.
+  - name: Question about what is supported
+    url: https://github.com/Jayanth-reflex/file-password-remover/blob/main/docs/product/format-matrix.md
+    about: The format matrix lists everything supported, refused and why.
