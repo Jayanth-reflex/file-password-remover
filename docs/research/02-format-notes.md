@@ -175,7 +175,30 @@ translates rather than reporting as file damage.
 
 ---
 
-## 9. R2/R3 PDFs cannot carry AES or encrypted metadata
+## 9. `os.fsync` needs a writable descriptor on Windows
+
+Not a format note, but the same shape of problem: an API that is more
+permissive on one platform than another.
+
+`atomic_write` reopened the finished temp file read-only purely to `fsync` it
+before the rename. That is fine on POSIX. On Windows `os.fsync` maps to
+`_commit()`, which rejects a read-only descriptor:
+
+```
+OSError: [Errno 9] Bad file descriptor
+```
+
+Every Windows run failed on it, and it was invisible on macOS and Linux. The
+fix is one flag — open `O_RDWR` — and the regression test asserts the flag
+rather than the behaviour, so it fails on any platform if someone changes it
+back.
+
+It was found by the release pipeline's Windows bundle job decrypting a real
+file with the frozen binary, which is the argument for smoke-testing an
+artifact rather than trusting that a build which printed "complete" produced
+something that works.
+
+## 10. R2/R3 PDFs cannot carry AES or encrypted metadata
 
 qpdf refuses `Encryption(R=2, aes=True)` with *"Cannot encrypt with AES when
 R < 4"* and likewise for `metadata=True`. Only relevant to fixture generation,
