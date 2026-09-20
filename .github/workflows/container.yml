@@ -182,9 +182,15 @@ jobs:
         env:
           DIGEST: ${{ steps.push.outputs.digest }}
         run: |
+          # OCI references must be lowercase, and github.repository preserves
+          # the owner's capitalisation. docker/metadata-action lowercases tags
+          # for us, which is why the push works; cosign gets the raw value, so
+          # lowercase it here or it fails with "could not parse reference".
+          image_lc="$(echo "${IMAGE}" | tr '[:upper:]' '[:lower:]')"
+
           # Keyless signing: the identity is this workflow, recorded in the
           # public Rekor transparency log. Verify with:
           #   cosign verify ghcr.io/jayanth-reflex/file-password-remover:latest \
           #     --certificate-identity-regexp '^https://github.com/Jayanth-reflex/file-password-remover/' \
           #     --certificate-oidc-issuer https://token.actions.githubusercontent.com
-          cosign sign --yes "${REGISTRY}/${IMAGE}@${DIGEST}"
+          cosign sign --yes "${REGISTRY}/${image_lc}@${DIGEST}"
