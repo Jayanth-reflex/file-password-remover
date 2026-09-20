@@ -1,0 +1,79 @@
+{
+  "" : {
+    "diagnostics" : "/Users/jayanth/Desktop/resume/projects/file-password-remover/ios/FprKit/.build/out/Intermediates.noindex/FprKit.build/Debug/FprKit-t.build/Objects-normal/arm64/FprKit-primary.dia",
+    "emit-module-dependencies" : "/Users/jayanth/Desktop/resume/projects/file-password-remover/ios/FprKit/.build/out/Intermediates.noindex/FprKit.build/Debug/FprKit-t.build/Objects-normal/arm64/FprKit-primary-emit-module.d",
+    "emit-module-diagnostics" : "/Users/jayanth/Desktop/resume/projects/file-password-remover/ios/FprKit/.build/out/Intermediates.noindex/FprKit.build/Debug/FprKit-t.build/Objects-normal/arm64/FprKit-primary-emit-module.dia",
+    "pch" : "/Users/jayanth/Desktop/resume/projects/file-password-remover/ios/FprKit/.build/out/Intermediates.noindex/FprKit.build/Debug/FprKit-t.build/Objects-normal/arm64/FprKit-primary-Bridging-header.pch",
+    "swift-dependencies" : "/Users/jayanth/Desktop/resume/projects/file-password-remover/ios/FprKit/.build/out/Intermediates.noindex/FprKit.build/Debug/FprKit-t.build/Objects-normal/arm64/FprKit-primary.swiftdeps"
+  },
+  "/Users/jayanth/Desktop/resume/projects/file-password-remover/ios/FprKit/Sources/FprKit/ByteReader.swift" : {
+    "const-values" : "/Users/jayanth/Desktop/resume/projects/file-password-remover/ios/FprKit/.build/out/Intermediates.noindex/FprKit.build/Debug/FprKit-t.build/Objects-normal/arm64/ByteReader.swiftconstvalues",
+    "dependencies" : "/Users/jayanth/Desktop/resume/projects/file-password-remover/ios/FprKit/.build/out/Intermediates.noindex/FprKit.build/Debug/FprKit-t.build/Objects-normal/arm64/ByteReader.d",
+    "diagnostics" : "/Users/jayanth/Desktop/resume/projects/file-password-remover/ios/FprKit/.build/out/Intermediates.noindex/FprKit.build/Debug/FprKit-t.build/Objects-normal/arm64/ByteReader.dia",
+    "index-unit-output-path" : "/FprKit.build/Debug/FprKit-t.build/Objects-normal/arm64/ByteReader.o",
+    "llvm-bc" : "/Users/jayanth/Desktop/resume/projects/file-password-remover/ios/FprKit/.build/out/Intermediates.noindex/FprKit.build/Debug/FprKit-t.build/Objects-normal/arm64/ByteReader.bc",
+    "object" : "/Users/jayanth/Desktop/resume/projects/file-password-remover/ios/FprKit/.build/out/Intermediates.noindex/FprKit.build/Debug/FprKit-t.build/Objects-normal/arm64/ByteReader.o",
+    "swift-dependencies" : "/Users/jayanth/Desktop/resume/projects/file-password-remover/ios/FprKit/.build/out/Intermediates.noindex/FprKit.build/Debug/FprKit-t.build/Objects-normal/arm64/ByteReader.swiftdeps",
+    "swiftmodule" : "/Users/jayanth/Desktop/resume/projects/file-password-remover/ios/FprKit/.build/out/Intermediates.noindex/FprKit.build/Debug/FprKit-t.build/Objects-normal/arm64/ByteReader~partial.swiftmodule"
+  },
+  "/Users/jayanth/Desktop/resume/projects/file-password-remover/ios/FprKit/Sources/FprKit/Crypto.swift" : {
+    "const-values" : "/Users/jayanth/Desktop/resume/projects/file-password-remover/ios/FprKit/.build/out/Intermediates.noindex/FprKit.build/Debug/FprKit-t.build/Objects-normal/arm64/Crypto.swiftconstvalues",
+    "dependencies" : "/Users/jayanth/Desktop/resume/projects/file-password-remover/ios/FprKit/.build/out/Intermediates.noindex/FprKit.build/Debug/FprKit-t.build/Objects-normal/arm64/Crypto.d",
+    "diagnostics" : "/Users/jayanth/Desktop/resume/projects/file-password-remover/ios/FprKit/.build/out/Intermediates.noindex/FprKit.build/Debug/FprKit-t.build/Objects-normal/arm64/Crypto.dia",
+    "index-unit-output-path" : "/FprKit.build/Debug/FprKit-t.build/Objects-normal/arm64/Crypto.o",
+    "llvm-bc" : "/Users/jayanth/Desktop/resume/projects/file-password-remover/ios/FprKit/.build/out/Intermediates.noindex/FprKit.build/Debug/FprKit-t.build/Objects-normal/arm64/Crypto.bc",
+    "object" : "/Users/jayanth/Desktop/resume/projects/file-password-remover/ios/FprKit/.build/out/Intermediates.noindex/FprKit.build/Debug/FprKit-t.build/Objects-normal/arm64/Crypto.o",
+    "swift-dependencies" : "/Users/jayanth/Desktop/resume/projects/file-password-remover/ios/FprKit/.build/out/Intermediates.noindex/FprKit.build/Debug/FprKit-t.build/Objects-normal/arm64/Crypto.swiftdeps",
+    "swiftmodule" : "/Users/jayanth/Desktop/resume/projects/file-password-remover/ios/FprKit/.build/out/Intermediates.noindex/FprKit.build/Debug/FprKit-t.build/Objects-normal/arm64/Crypto~partial.swiftmodule"
+  },
+  "/Users/jayanth/Desktop/resume/projects/file-password-remover/ios/FprKit/Sources/FprKit/Deflate.swift" : {
+    "const-values" : "/Users/jayanth/Desktop/resume/projects/file-password-remover/ios/FprKit/.build/out/Intermediates.noindex/FprKit.build/Debug/FprKit-t.build/Objects-normal/arm64/Deflate.swiftconstvalues",
+    "dependencies" : "/Users/jayanth/Desktop/resume/projects/file-password-remover/ios/FprKit/.build/out/Intermediates.noindex/FprKit.build/Debug/FprKit-t.build/Objects-normal/arm64/Deflate.d",
+    "diagnostics" : "/Users/jayanth/Desktop/resume/projects/file-password-remover/ios/FprKit/.build/out/Intermediates.noindex/FprKit.build/Debug/FprKit-t.build/Objects-normal/arm64/Deflate.dia",
+    "index-unit-output-path" : "/FprKit.build/Debug/FprKit-t.build/Objects-normal/arm64/Deflate.o",
+    "llvm-bc" : "/Users/jayanth/Desktop/resume/projects/file-password-remover/ios/FprKit/.build/out/Intermediates.noindex/FprKit.build/Debug/FprKit-t.build/Objects-normal/arm64/Deflate.bc",
+    "object" : "/Users/jayanth/Desktop/resume/projects/file-password-remover/ios/FprKit/.build/out/Intermediates.noindex/FprKit.build/Debug/FprKit-t.build/Objects-normal/arm64/Deflate.o",
+    "swift-dependencies" : "/Users/jayanth/Desktop/resume/projects/file-password-remover/ios/FprKit/.build/out/Intermediates.noindex/FprKit.build/Debug/FprKit-t.build/Objects-normal/arm64/Deflate.swiftdeps",
+    "swiftmodule" : "/Users/jayanth/Desktop/resume/projects/file-password-remover/ios/FprKit/.build/out/Intermediates.noindex/FprKit.build/Debug/FprKit-t.build/Objects-normal/arm64/Deflate~partial.swiftmodule"
+  },
+  "/Users/jayanth/Desktop/resume/projects/file-password-remover/ios/FprKit/Sources/FprKit/Types.swift" : {
+    "const-values" : "/Users/jayanth/Desktop/resume/projects/file-password-remover/ios/FprKit/.build/out/Intermediates.noindex/FprKit.build/Debug/FprKit-t.build/Objects-normal/arm64/Types.swiftconstvalues",
+    "dependencies" : "/Users/jayanth/Desktop/resume/projects/file-password-remover/ios/FprKit/.build/out/Intermediates.noindex/FprKit.build/Debug/FprKit-t.build/Objects-normal/arm64/Types.d",
+    "diagnostics" : "/Users/jayanth/Desktop/resume/projects/file-password-remover/ios/FprKit/.build/out/Intermediates.noindex/FprKit.build/Debug/FprKit-t.build/Objects-normal/arm64/Types.dia",
+    "index-unit-output-path" : "/FprKit.build/Debug/FprKit-t.build/Objects-normal/arm64/Types.o",
+    "llvm-bc" : "/Users/jayanth/Desktop/resume/projects/file-password-remover/ios/FprKit/.build/out/Intermediates.noindex/FprKit.build/Debug/FprKit-t.build/Objects-normal/arm64/Types.bc",
+    "object" : "/Users/jayanth/Desktop/resume/projects/file-password-remover/ios/FprKit/.build/out/Intermediates.noindex/FprKit.build/Debug/FprKit-t.build/Objects-normal/arm64/Types.o",
+    "swift-dependencies" : "/Users/jayanth/Desktop/resume/projects/file-password-remover/ios/FprKit/.build/out/Intermediates.noindex/FprKit.build/Debug/FprKit-t.build/Objects-normal/arm64/Types.swiftdeps",
+    "swiftmodule" : "/Users/jayanth/Desktop/resume/projects/file-password-remover/ios/FprKit/.build/out/Intermediates.noindex/FprKit.build/Debug/FprKit-t.build/Objects-normal/arm64/Types~partial.swiftmodule"
+  },
+  "/Users/jayanth/Desktop/resume/projects/file-password-remover/ios/FprKit/Sources/FprKit/ZipAdapter.swift" : {
+    "const-values" : "/Users/jayanth/Desktop/resume/projects/file-password-remover/ios/FprKit/.build/out/Intermediates.noindex/FprKit.build/Debug/FprKit-t.build/Objects-normal/arm64/ZipAdapter.swiftconstvalues",
+    "dependencies" : "/Users/jayanth/Desktop/resume/projects/file-password-remover/ios/FprKit/.build/out/Intermediates.noindex/FprKit.build/Debug/FprKit-t.build/Objects-normal/arm64/ZipAdapter.d",
+    "diagnostics" : "/Users/jayanth/Desktop/resume/projects/file-password-remover/ios/FprKit/.build/out/Intermediates.noindex/FprKit.build/Debug/FprKit-t.build/Objects-normal/arm64/ZipAdapter.dia",
+    "index-unit-output-path" : "/FprKit.build/Debug/FprKit-t.build/Objects-normal/arm64/ZipAdapter.o",
+    "llvm-bc" : "/Users/jayanth/Desktop/resume/projects/file-password-remover/ios/FprKit/.build/out/Intermediates.noindex/FprKit.build/Debug/FprKit-t.build/Objects-normal/arm64/ZipAdapter.bc",
+    "object" : "/Users/jayanth/Desktop/resume/projects/file-password-remover/ios/FprKit/.build/out/Intermediates.noindex/FprKit.build/Debug/FprKit-t.build/Objects-normal/arm64/ZipAdapter.o",
+    "swift-dependencies" : "/Users/jayanth/Desktop/resume/projects/file-password-remover/ios/FprKit/.build/out/Intermediates.noindex/FprKit.build/Debug/FprKit-t.build/Objects-normal/arm64/ZipAdapter.swiftdeps",
+    "swiftmodule" : "/Users/jayanth/Desktop/resume/projects/file-password-remover/ios/FprKit/.build/out/Intermediates.noindex/FprKit.build/Debug/FprKit-t.build/Objects-normal/arm64/ZipAdapter~partial.swiftmodule"
+  },
+  "/Users/jayanth/Desktop/resume/projects/file-password-remover/ios/FprKit/Sources/FprKit/ZipArchive.swift" : {
+    "const-values" : "/Users/jayanth/Desktop/resume/projects/file-password-remover/ios/FprKit/.build/out/Intermediates.noindex/FprKit.build/Debug/FprKit-t.build/Objects-normal/arm64/ZipArchive.swiftconstvalues",
+    "dependencies" : "/Users/jayanth/Desktop/resume/projects/file-password-remover/ios/FprKit/.build/out/Intermediates.noindex/FprKit.build/Debug/FprKit-t.build/Objects-normal/arm64/ZipArchive.d",
+    "diagnostics" : "/Users/jayanth/Desktop/resume/projects/file-password-remover/ios/FprKit/.build/out/Intermediates.noindex/FprKit.build/Debug/FprKit-t.build/Objects-normal/arm64/ZipArchive.dia",
+    "index-unit-output-path" : "/FprKit.build/Debug/FprKit-t.build/Objects-normal/arm64/ZipArchive.o",
+    "llvm-bc" : "/Users/jayanth/Desktop/resume/projects/file-password-remover/ios/FprKit/.build/out/Intermediates.noindex/FprKit.build/Debug/FprKit-t.build/Objects-normal/arm64/ZipArchive.bc",
+    "object" : "/Users/jayanth/Desktop/resume/projects/file-password-remover/ios/FprKit/.build/out/Intermediates.noindex/FprKit.build/Debug/FprKit-t.build/Objects-normal/arm64/ZipArchive.o",
+    "swift-dependencies" : "/Users/jayanth/Desktop/resume/projects/file-password-remover/ios/FprKit/.build/out/Intermediates.noindex/FprKit.build/Debug/FprKit-t.build/Objects-normal/arm64/ZipArchive.swiftdeps",
+    "swiftmodule" : "/Users/jayanth/Desktop/resume/projects/file-password-remover/ios/FprKit/.build/out/Intermediates.noindex/FprKit.build/Debug/FprKit-t.build/Objects-normal/arm64/ZipArchive~partial.swiftmodule"
+  },
+  "/Users/jayanth/Desktop/resume/projects/file-password-remover/ios/FprKit/Sources/FprKit/ZipStructure.swift" : {
+    "const-values" : "/Users/jayanth/Desktop/resume/projects/file-password-remover/ios/FprKit/.build/out/Intermediates.noindex/FprKit.build/Debug/FprKit-t.build/Objects-normal/arm64/ZipStructure.swiftconstvalues",
+    "dependencies" : "/Users/jayanth/Desktop/resume/projects/file-password-remover/ios/FprKit/.build/out/Intermediates.noindex/FprKit.build/Debug/FprKit-t.build/Objects-normal/arm64/ZipStructure.d",
+    "diagnostics" : "/Users/jayanth/Desktop/resume/projects/file-password-remover/ios/FprKit/.build/out/Intermediates.noindex/FprKit.build/Debug/FprKit-t.build/Objects-normal/arm64/ZipStructure.dia",
+    "index-unit-output-path" : "/FprKit.build/Debug/FprKit-t.build/Objects-normal/arm64/ZipStructure.o",
+    "llvm-bc" : "/Users/jayanth/Desktop/resume/projects/file-password-remover/ios/FprKit/.build/out/Intermediates.noindex/FprKit.build/Debug/FprKit-t.build/Objects-normal/arm64/ZipStructure.bc",
+    "object" : "/Users/jayanth/Desktop/resume/projects/file-password-remover/ios/FprKit/.build/out/Intermediates.noindex/FprKit.build/Debug/FprKit-t.build/Objects-normal/arm64/ZipStructure.o",
+    "swift-dependencies" : "/Users/jayanth/Desktop/resume/projects/file-password-remover/ios/FprKit/.build/out/Intermediates.noindex/FprKit.build/Debug/FprKit-t.build/Objects-normal/arm64/ZipStructure.swiftdeps",
+    "swiftmodule" : "/Users/jayanth/Desktop/resume/projects/file-password-remover/ios/FprKit/.build/out/Intermediates.noindex/FprKit.build/Debug/FprKit-t.build/Objects-normal/arm64/ZipStructure~partial.swiftmodule"
+  }
+}

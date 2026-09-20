@@ -14,3 +14,6 @@ htmlcov/
 # Generated fixtures and verification artifacts are reproducible; keep them out of git.
 tests/fixtures/generated/
 artifacts/
+
+# Generated cross-language test-vector corpus
+build/vectors/
