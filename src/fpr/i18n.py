@@ -43,13 +43,33 @@ def available_languages() -> list[str]:
     return sorted(p.stem for p in LOCALE_DIR.glob("*.json"))
 
 
-def _detect() -> str:
-    for env in ("FPR_LANG", "LC_ALL", "LC_MESSAGES", "LANG"):
-        value = os.environ.get(env)
-        if value:
-            code = value.split(".")[0].split("_")[0].lower()
-            if code and code != "c":
-                return code
+def _looks_like_a_language_code(code: str) -> bool:
+    """ISO 639 codes are two or three ASCII letters. Nothing else is one.
+
+    This is the guard that stops a platform-specific locale *name* being used
+    as a catalogue name -- see :func:`_system_language`.
+    """
+    return 2 <= len(code) <= 3 and code.isascii() and code.isalpha()
+
+
+def _system_language() -> str | None:
+    """The operating system's UI language as an ISO 639-1 code, or ``None``."""
+    if os.name == "nt":  # pragma: no cover - exercised on Windows only
+        # locale.getlocale() returns Windows' own locale names, which are
+        # English words: "English_United States", not "en_US". Splitting that
+        # on "_" yields "english", which is not a language code and would send
+        # the lookup after a catalogue that can never exist. Ask Windows for
+        # the UI language and map the LCID through the table the standard
+        # library already ships for exactly this.
+        try:
+            import ctypes
+
+            lcid = ctypes.windll.kernel32.GetUserDefaultUILanguage()  # type: ignore[attr-defined]
+        except (AttributeError, OSError):
+            return None
+        name = locale.windows_locale.get(lcid)
+        return name.split("_")[0].lower() if name else None
+
     # locale.getdefaultlocale() would be the obvious call, but it is deprecated
     # and due for removal in Python 3.15. getlocale() reads the process locale
     # without the deprecation and without mutating global state the way
@@ -57,10 +77,22 @@ def _detect() -> str:
     try:
         system = locale.getlocale()[0]
     except (ValueError, TypeError):  # pragma: no cover - malformed locale env
-        return _FALLBACK
-    code = system.split("_")[0].lower() if system else _FALLBACK
+        return None
+    return system.split("_")[0].lower() if system else None
+
+
+def _detect() -> str:
+    for env in ("FPR_LANG", "LC_ALL", "LC_MESSAGES", "LANG"):
+        value = os.environ.get(env)
+        if value:
+            code = value.split(".")[0].split("_")[0].lower()
+            if code and code != "c":
+                return code
+    detected = _system_language()
     # "C" and "POSIX" are the absence of a locale, not a language.
-    return _FALLBACK if code in ("c", "posix", "") else code
+    if not detected or detected in ("c", "posix"):
+        return _FALLBACK
+    return detected if _looks_like_a_language_code(detected) else _FALLBACK
 
 
 def set_language(code: str | None = None) -> str:

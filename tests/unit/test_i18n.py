@@ -58,3 +58,26 @@ def test_c_locale_is_not_treated_as_a_language(monkeypatch) -> None:
     for var in ("FPR_LANG", "LC_ALL", "LC_MESSAGES", "LANG"):
         monkeypatch.setenv(var, "C")
     assert i18n.set_language() == "en"
+
+
+def test_a_windows_locale_name_is_not_used_as_a_language_code(monkeypatch) -> None:
+    """Windows reports "English_United States", not "en_US".
+
+    Splitting that the POSIX way yields "english", which is not a language code
+    and would send the catalogue lookup after a file that cannot exist.
+    """
+    for var in ("FPR_LANG", "LC_ALL", "LC_MESSAGES", "LANG"):
+        monkeypatch.delenv(var, raising=False)
+    monkeypatch.setattr(i18n.locale, "getlocale", lambda: ("English_United States", "1252"))
+    monkeypatch.setattr(i18n.os, "name", "posix")
+    assert i18n.set_language() == "en"
+
+
+@pytest.mark.parametrize("code", ["english", "", "e", "en-us", "abcd", "12"])
+def test_implausible_language_codes_are_rejected(code: str) -> None:
+    assert not i18n._looks_like_a_language_code(code)
+
+
+@pytest.mark.parametrize("code", ["en", "de", "fra"])
+def test_plausible_language_codes_are_accepted(code: str) -> None:
+    assert i18n._looks_like_a_language_code(code)
