@@ -15,6 +15,11 @@ from fpr.errors import ExitCode
 
 from ..conftest import OWNER_PASSWORD, SAMPLE_PASSWORD, WRONG_PASSWORD
 
+CHILD_TIMEOUT = 120
+"""Seconds. Generous for a fixture-sized file on a slow hosted runner, and far
+short of a CI job limit, so a child that blocks fails this test loudly instead
+of hanging the whole matrix."""
+
 
 def run(args: list[str], stdin: str | None = None) -> subprocess.CompletedProcess[str]:
     """Run the real installed entry point in a child process.
@@ -22,13 +27,29 @@ def run(args: list[str], stdin: str | None = None) -> subprocess.CompletedProces
     In-process calls to ``main`` cover most behaviour, but exit codes, argv
     handling and stdin belong to the process boundary, so those are tested for
     real.
+
+    ``stdin`` is always explicit. Letting the child inherit the test runner's
+    descriptor makes the no-TTY tests depend on how the CI runner was started:
+    if fd 0 happens to be a console, the tool correctly decides it may prompt,
+    and then blocks forever on input nobody is going to type.
     """
+    argv = [sys.executable, "-m", "fpr.cli.main", *args]
+    if stdin is None:
+        return subprocess.run(
+            argv,
+            stdin=subprocess.DEVNULL,
+            capture_output=True,
+            text=True,
+            check=False,
+            timeout=CHILD_TIMEOUT,
+        )
     return subprocess.run(
-        [sys.executable, "-m", "fpr.cli.main", *args],
+        argv,
         input=stdin,
         capture_output=True,
         text=True,
         check=False,
+        timeout=CHILD_TIMEOUT,
     )
 
 
@@ -185,10 +206,12 @@ def test_password_env_warns_loudly(pdf_encrypted: Path) -> None:
             "--password-env",
             "FPR_TEST_PW",
         ],
+        stdin=subprocess.DEVNULL,
         capture_output=True,
         text=True,
         env=env,
         check=False,
+        timeout=CHILD_TIMEOUT,
     )
     assert result.returncode == ExitCode.OK
     assert "visible to other processes" in result.stderr

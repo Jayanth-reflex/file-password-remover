@@ -84,9 +84,11 @@ def test_password_never_reaches_argv_of_a_child_process(pdf_encrypted: Path, tmp
             "--password-file",
             str(_pwfile(tmp_path, SAMPLE_PASSWORD)),
         ],
+        stdin=subprocess.DEVNULL,
         capture_output=True,
         text=True,
         check=False,
+        timeout=120,
     )
     assert result.returncode == 0
     assert SAMPLE_PASSWORD not in " ".join(result.args)
