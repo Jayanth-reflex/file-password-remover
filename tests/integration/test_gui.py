@@ -183,13 +183,18 @@ def test_every_control_is_reachable_from_the_keyboard(app) -> None:
         try:
             widget = widget.tk_focusNext()
         except tk.TclError as error:  # pragma: no cover - runner-dependent
-            # tk_focusNext lives in Tk's focus.tcl and is auto-loaded through
-            # Tcl's auto_path. Some Windows CI runners ship a Tk whose auto_path
-            # is wrong, so the proc is simply absent and every call fails. That
-            # is a defect in the runner's Tk, not in this application, so it is
-            # skipped rather than reported as a product failure -- and narrowly,
-            # so a genuine focus regression still fails the test.
-            if "invalid command name" not in str(error):
+            # tk_focusNext is defined in Tk's focus.tcl, auto-loaded through
+            # Tcl's auto_path. Some Windows CI runners ship a Python whose Tk
+            # is missing that file, and the failure surfaces two ways depending
+            # on how far the autoloader gets: it either cannot read focus.tcl,
+            # or the proc never gets defined and the call is an "invalid command
+            # name". Both mean the same thing -- this Tk cannot walk a focus
+            # ring -- and neither is a defect in this application.
+            #
+            # Matched on those two signatures only, so a genuine focus
+            # regression still fails rather than being skipped away.
+            message = str(error)
+            if "focus.tcl" not in message and "invalid command name" not in message:
                 raise
             pytest.skip(f"this Tk build cannot walk the focus ring: {error}")
         if widget is None:  # pragma: no cover - end of ring
