@@ -110,7 +110,7 @@ offer to try again — because it has no way to try that is not guessing.
 A whole folder, one password, machine-readable output:
 
 ```bash
-fpr remove ~/archive --recursive --pattern '*.docx' --output-dir ./clean --json
+fpr --json remove ~/archive --recursive --pattern '*.docx' --output-dir ./clean
 ```
 
 Scripted, without the password touching `argv`, the environment or the disk:
@@ -452,7 +452,7 @@ access can drive it directly; nothing here requires MCP or a special adapter.
 ```bash
 # machine-readable, and the password never touches argv, the shell history
 # or the environment — pipe it from wherever your agent's secret actually lives
-printf '%s' "$PASSWORD" | fpr remove report.pdf --password-stdin --json
+printf '%s' "$PASSWORD" | fpr --json remove report.pdf --password-stdin
 ```
 
 Three things an agent (or the person prompting it) needs to know before using

@@ -354,7 +354,7 @@ Password:
     an agent has to be given one explicitly, the same as a human does.
   </p>
   <div class="agent-box"><pre><span class="d"># machine-readable; the password never touches argv, history, or the environment</span>
-<span class="p">$</span> <span class="c">printf '%s' "$PASSWORD" | fpr remove report.pdf --password-stdin --json</span>
+<span class="p">$</span> <span class="c">printf '%s' "$PASSWORD" | fpr --json remove report.pdf --password-stdin</span>
 {"ok": true, "output": "report-unprotected.pdf",
  "verification": {"encrypted": "false", "pages": "3", ...}}</pre></div>
   <div class="agent-links">

@@ -161,7 +161,7 @@ reimplements the removal:
 ## Batch and scripting
 
 ```bash
-fpr --json remove ~/inbox --recursive --pattern '*.pdf' --output-dir ./clean --json \
+fpr --json remove ~/inbox --recursive --pattern '*.pdf' --output-dir ./clean \
   | jq '.items[] | select(.outcome=="failed")'
 ```
 

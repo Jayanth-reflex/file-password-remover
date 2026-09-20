@@ -160,7 +160,7 @@ esac
 
 **A folder, one password, machine-readable:**
 ```bash
-fpr remove ~/archive --recursive --pattern '*.docx' --output-dir ./clean --json
+fpr --json remove ~/archive --recursive --pattern '*.docx' --output-dir ./clean
 ```
 
 **Without the password touching argv, the environment or the disk:**
