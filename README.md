@@ -13,7 +13,7 @@
 [![Release](https://img.shields.io/github/v/release/Jayanth-reflex/file-password-remover?sort=semver&color=b4502a)](https://github.com/Jayanth-reflex/file-password-remover/releases/latest)
 [![Container](https://img.shields.io/badge/ghcr.io-signed-2f6b46?logo=docker&logoColor=white)](https://github.com/Jayanth-reflex/file-password-remover/pkgs/container/file-password-remover)
 
-[![Tests](https://img.shields.io/badge/tests-291%20passing-brightgreen)](docs/reports/verification-report.md)
+[![Tests](https://img.shields.io/badge/tests-387%20passing-brightgreen)](docs/reports/verification-report.md)
 [![Platforms](https://img.shields.io/badge/CI-macOS%20%C2%B7%20Linux%20%C2%B7%20Windows-informational)](#platform-support)
 [![Python](https://img.shields.io/badge/python-3.10%20%E2%80%93%203.13-blue)](pyproject.toml)
 [![Network](https://img.shields.io/badge/network-none-success)](docs/adr/0002-local-only-no-backend.md)
@@ -471,7 +471,7 @@ the matrix existing at all.
 
 | Tests | Coverage | Types | Static analysis | Dependencies |
 | :---: | :---: | :---: | :---: | :---: |
-| **291** | **88 %** | `mypy --strict` clean | `bandit` — 0 findings | 9 pinned · **0 advisories** |
+| **387** | **89 %** | `mypy --strict` clean | `bandit` — 0 findings | 9 pinned · **0 advisories** |
 
 </div>
 
