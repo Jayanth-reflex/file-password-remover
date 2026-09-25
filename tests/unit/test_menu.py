@@ -73,8 +73,15 @@ def test_every_command_carries_its_effect_in_words_not_only_colour() -> None:
 def test_colour_is_emitted_on_a_terminal_and_withheld_otherwise(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
+    from fpr.cli import output
+
     monkeypatch.delenv("NO_COLOR", raising=False)
     monkeypatch.delenv("FPR_FORCE_COLOR", raising=False)
+    # A fake stream can look like a terminal but can never be a Windows console
+    # handle, so on Windows the virtual-terminal check below would correctly
+    # refuse colour and this would be testing the platform rather than the
+    # decision. The Windows path has its own tests, further down.
+    monkeypatch.setattr(output, "_is_windows", lambda: False)
     assert "\033[" in _render(tty=True)
     assert "\033[" not in _render(tty=False)
 

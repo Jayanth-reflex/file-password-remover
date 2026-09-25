@@ -15,6 +15,7 @@ Run it after changing the menu:
 from __future__ import annotations
 
 import io
+import os
 import re
 import sys
 from pathlib import Path
@@ -75,8 +76,21 @@ def _spans(line: str) -> list[tuple[str, str]]:
 
 
 def render() -> str:
-    stream = _Terminal()
-    Renderer(stream).menu()
+    # Force colour rather than relying on the stream looking like a terminal.
+    # On Windows, colour is claimed only after the console accepts virtual
+    # terminal processing, which a StringIO can never do -- without this, the
+    # same script would generate a colourless SVG there, and whoever ran
+    # `make assets` on Windows would commit it.
+    previous = os.environ.get("FPR_FORCE_COLOR")
+    os.environ["FPR_FORCE_COLOR"] = "1"
+    try:
+        stream = _Terminal()
+        Renderer(stream).menu()
+    finally:
+        if previous is None:
+            del os.environ["FPR_FORCE_COLOR"]
+        else:
+            os.environ["FPR_FORCE_COLOR"] = previous
     lines = stream.getvalue().split("\n")
     while lines and not lines[-1].strip():
         lines.pop()
