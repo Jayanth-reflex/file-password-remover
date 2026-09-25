@@ -12,6 +12,7 @@ Two rules shape everything here:
 
 from __future__ import annotations
 
+import ctypes
 import dataclasses
 import json
 import os
@@ -42,8 +43,29 @@ _COLOURS = {
     "warn": "\033[33m",
     "err": "\033[31m",
     "dim": "\033[2m",
+    "read": "\033[36m",
     "brass": _BRASS_8,
 }
+
+# The menu. Each row is (command, argument, what it does, what it does to your
+# files, colour). The fourth column is the point of the screen: the one thing a
+# person needs to know before running an unfamiliar tool on their documents is
+# whether it will change them. It is written in words, not only in colour,
+# because a colour is not readable in a CI log, in `cmd.exe` without virtual
+# terminal support, or by a screen reader.
+_MENU_ROWS = (
+    ("inspect", "FILE", "what protection is on this file?", "reads only", "read"),
+    ("remove", "FILE", "write an unlocked copy", "unlocks", "ok"),
+    ("protect", "FILE", "write a locked copy", "locks", "brass"),
+    ("formats", "", "what is supported, and what is not", "", "dim"),
+    ("version", "", "versions of everything involved", "", "dim"),
+)
+
+_MENU_EXAMPLES = (
+    "fpr inspect report.pdf",
+    "fpr remove report.pdf",
+    "fpr protect taxes.pdf --generate",
+)
 
 # Shorter captions for the hallmark row, so it stays one line on an 80-column
 # terminal. Only the caption is shortened -- the value is always printed exactly
@@ -61,6 +83,53 @@ _INDENT = "   "
 _LABEL_WIDTH = 12
 
 
+def _is_windows() -> bool:
+    """Wrapped in a function so ``mypy --strict`` keeps checking both branches.
+
+    A bare ``sys.platform`` comparison is narrowed away at type-check time,
+    which means the Windows branch is never checked on a Linux CI runner and
+    vice versa.
+    """
+    return sys.platform.startswith("win")
+
+
+def enable_ansi(stream: TextIO) -> bool:
+    """Make ANSI escapes work on this stream, and say whether they will.
+
+    macOS and Linux terminals interpret escape sequences as they arrive.
+    A Windows console does not until ``ENABLE_VIRTUAL_TERMINAL_PROCESSING`` is
+    set on its handle -- without this call, `cmd.exe` and older PowerShell hosts
+    print the raw escape bytes over the output instead of colouring it.
+
+    Returns ``True`` when escapes will be interpreted: every non-Windows
+    platform, and a Windows console that accepted the mode change.
+    """
+    if not _is_windows():
+        return True
+    # ``ctypes.windll`` exists only on Windows, and a plain attribute access
+    # would fail type checking on every other platform.
+    windll = getattr(ctypes, "windll", None)
+    if windll is None:  # pragma: no cover - Windows only
+        return False
+    try:  # pragma: no cover - exercised on Windows runners only
+        # Which standard handle this stream is determines which console mode to
+        # change; anything that is not one of the two is not a console.
+        descriptor = stream.fileno()
+        handle_id = {1: -11, 2: -12}.get(descriptor)
+        if handle_id is None:
+            return False
+        handle = windll.kernel32.GetStdHandle(handle_id)
+        mode = ctypes.c_uint32()
+        if not windll.kernel32.GetConsoleMode(handle, ctypes.byref(mode)):
+            return False  # a pipe or a file, where colour is off anyway
+        enable_vt = 0x0004
+        if mode.value & enable_vt:
+            return True
+        return bool(windll.kernel32.SetConsoleMode(handle, mode.value | enable_vt))
+    except (AttributeError, OSError, ValueError):  # pragma: no cover - no console
+        return False
+
+
 def supports_256_colour() -> bool:
     if os.environ.get("COLORTERM", "").lower() in {"truecolor", "24bit"}:
         return True
@@ -72,7 +141,9 @@ def supports_colour(stream: TextIO) -> bool:
         return False
     if os.environ.get("FPR_FORCE_COLOR") is not None:
         return True
-    return bool(getattr(stream, "isatty", lambda: False)())
+    if not bool(getattr(stream, "isatty", lambda: False)()):
+        return False
+    return enable_ansi(stream)
 
 
 def human_size(n: int) -> str:
@@ -117,7 +188,9 @@ class Renderer:
 
     # ------------------------------------------------------------ primitives
     def _paint(self, text: str, kind: str) -> str:
-        if not self.colour:
+        # Painting an empty string would emit a bare set/reset pair, which is
+        # invisible on screen and noise in a captured stream.
+        if not self.colour or not text:
             return text
         return f"{self.palette.get(kind, '')}{text}{_RESET}"
 
@@ -191,6 +264,50 @@ class Renderer:
 
     def json(self, payload: dict[str, Any]) -> None:
         print(json.dumps(payload, indent=2, default=_encode), file=self.stream)
+
+    # ----------------------------------------------------------------- menu
+    def menu(self) -> None:
+        """The whole tool on one screen.
+
+        Printed when ``fpr`` is run with no command, which is how most people
+        meet it. ``fpr --help`` still prints the full argparse listing; this is
+        the short version, and the one that answers the question a person
+        actually arrives with -- what does this do to my file?
+        """
+        from .. import __version__
+
+        mark_solid = "\u25c6" if self.rules else "*"
+        mark_hollow = "\u25c7" if self.rules else "-"
+
+        self.line()
+        self.line(f"  {self._paint('FPR', 'brass')}  {self._paint(__version__, 'dim')}")
+        self.line("  Remove or add password protection. Everything happens on this machine.")
+        self.line()
+
+        for command, argument, description, effect, colour in _MENU_ROWS:
+            mark = mark_solid if effect else mark_hollow
+            row = (
+                f"  {self._paint(mark, colour)} "
+                f"{command.ljust(8)}{argument.ljust(6)}{description.ljust(38)}"
+                f"{self._paint(effect, colour)}"
+            )
+            self.line(row.rstrip())
+
+        self.line()
+        self.line(f"  {self._paint(_caption('try'), 'brass')}")
+        for example in _MENU_EXAMPLES:
+            self.line(f"  {example}")
+
+        self.line()
+        self.line(f"  {self._paint(self._rule(46), 'dim')}")
+        self.line(
+            f"  {self._paint('fpr COMMAND --help', 'dim')} for every option. "
+            "Your original file is never changed."
+        )
+        self.line(
+            f"  {self._paint('This tool never guesses, recovers or cracks a password.', 'dim')}"
+        )
+        self.line()
 
     # -------------------------------------------------------------- reports
     def detection(self, detection: Detection) -> None:

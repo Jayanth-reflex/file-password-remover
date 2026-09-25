@@ -4,7 +4,40 @@
 fpr [--json] [-v|-q] COMMAND [options] FILE...
 ```
 
-Four commands: `inspect`, `remove`, `formats`, `version`.
+Five commands: `inspect`, `remove`, `protect`, `formats`, `version`.
+
+---
+
+## `fpr`
+
+Run with no command, `fpr` prints the menu: every command, what it does, and
+what it does to your files. The effect of each command is written in words as
+well as carried in colour, so it reads the same in a CI log, in a terminal with
+`NO_COLOR` set, and to a screen reader.
+
+```
+$ fpr
+  FPR  1.1.0
+  Remove or add password protection. Everything happens on this machine.
+
+  ◆ inspect FILE  what protection is on this file?      reads only
+  ◆ remove  FILE  write an unlocked copy                unlocks
+  ◆ protect FILE  write a locked copy                   locks
+  ◇ formats       what is supported, and what is not
+  ◇ version       versions of everything involved
+
+  TRY
+  fpr inspect report.pdf
+  fpr remove report.pdf
+  fpr protect taxes.pdf --generate
+
+  ──────────────────────────────────────────────
+  fpr COMMAND --help for every option. Your original file is never changed.
+  This tool never guesses, recovers or cracks a password.
+```
+
+The exit code is `2` (`USAGE`): no command ran. `fpr --help` still prints the
+full option listing, and `fpr COMMAND --help` the options for one command.
 
 ---
 
@@ -97,6 +130,65 @@ explanation. See [ADR-0007](../adr/0007-no-password-on-argv.md).
 
 ---
 
+## `fpr protect FILE`
+
+Encrypt a file that has no password yet and write a protected copy. Supported
+for PDF and ZIP; every other adapter refuses rather than writing an
+unencrypted copy under a name that suggests otherwise.
+
+```
+$ fpr protect notes.pdf --generate
+✓ PROTECTED  notes-protected.pdf
+  applied      user-password
+  algorithm    AES-256 (PDF 2.0, R6)
+  size         48.2 KiB -> 49.1 KiB · 0.09s
+
+  ENCRYPTED  DIGEST            PAGES
+  true       3f2a1c9d8e7b4a05  12
+  ──────────────────────────────────────────────
+  saved to     /home/you/notes-protected.pdf
+  original     /home/you/notes.pdf (unchanged)
+
+  PASSWORD
+  kwvzq-8mhtn-3pdxr-jc4bs-9vgqy
+  Save this now. It is shown once, and this tool cannot recover it.
+```
+
+| Option | Meaning |
+| --- | --- |
+| `-o`, `--output PATH` | Exact output path (single input only) |
+| `--output-dir DIR` | Directory for the protected copies |
+| `--suffix TEXT` | Suffix added to the stem (default `-protected`) |
+| `--overwrite` | Replace an existing output file |
+| `--generate` | Generate a strong password instead of asking for one |
+| `--password-out FILE` | Write the generated password to a file instead of printing it |
+
+Password input otherwise follows the same routes as `remove`, and `--generate`
+cannot be combined with a password you supply.
+
+### Why there is no `--in-place`
+
+Every other destructive option in this tool can be undone by reaching for the
+original. Encrypting in place cannot: the tool refuses, by design, to crack a
+password back open, so a lost password means a lost file. Four rules follow
+from that, and all four are enforced:
+
+- The password is surfaced only **after** the encrypted file exists on disk, so
+  a crash between the two cannot leave a locked file whose password was never
+  shown.
+- `--generate` is refused for a batch. One password shown once, for several
+  files, loses most of them.
+- A file that is already protected is refused; remove the existing protection
+  first.
+- `--json` includes `generated_password`, because an agent that cannot read the
+  password back out of the response has destroyed the file it was securing.
+
+`--password-out` creates the file owner-only (`0600`) on macOS and Linux. On
+Windows the mode argument only sets the read-only flag, so the file inherits
+the directory's permissions — choose the directory accordingly.
+
+---
+
 ## `fpr formats`
 
 Everything the tool supports, everything it refuses, and the policy rules,
@@ -118,7 +210,11 @@ dependency including the bundled libqpdf. Attach this to bug reports.
 | `-q`, `--quiet` | Errors only |
 | `--version` | Print the version and exit |
 
-`NO_COLOR` disables colour, as does any non-TTY stdout.
+`NO_COLOR` disables colour, as does any non-TTY stdout. `FPR_FORCE_COLOR`
+turns it back on for a pipe. On Windows, virtual terminal processing is enabled
+on the console handle at startup, so the same colour appears in `cmd.exe` and
+PowerShell as in a macOS or Linux terminal; where the console refuses the mode
+change, output falls back to plain text rather than printing escape bytes.
 
 ---
 

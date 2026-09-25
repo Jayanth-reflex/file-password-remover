@@ -32,6 +32,7 @@ import androidx.compose.ui.unit.sp
 import androidx.core.content.FileProvider
 import androidx.lifecycle.viewmodel.compose.viewModel
 import dev.jayanth.fpr.Detection
+import dev.jayanth.fpr.FprKit
 import java.io.File
 
 class MainActivity : ComponentActivity() {
@@ -167,7 +168,10 @@ fun DocumentScreen(model: RemovalViewModel = viewModel()) {
             }
         }
 
-        Caption("No network permission, no telemetry. Apache-2.0.")
+        // The version is here so a bug report can name the build it came from.
+        // It reads from FprKit rather than BuildConfig, so what is shown is the
+        // version of the engine that produced the result above it.
+        Caption("Version ${FprKit.VERSION}. No network permission, no telemetry. Apache-2.0.")
     }
 }
 

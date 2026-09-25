@@ -21,7 +21,7 @@ PROJECT = IOS / "FilePasswordRemover.xcodeproj"
 
 BUNDLE_ID = "dev.jayanth.filepasswordremover"
 DEPLOYMENT_TARGET = "17.0"
-MARKETING_VERSION = "1.0.0"
+MARKETING_VERSION = "1.1.0"
 
 
 def oid(role: str) -> str:

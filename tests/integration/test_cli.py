@@ -245,6 +245,21 @@ def test_version_reports_dependency_provenance(capsys) -> None:
     assert "libqpdf" in out
 
 
-def test_no_command_prints_help(capsys) -> None:
+def test_no_command_prints_the_menu(capsys) -> None:
+    """A bare `fpr` is an arrival, not an error report.
+
+    The exit code stays USAGE because no command ran, but what is printed is
+    the menu rather than an argparse dump. `--help` still gives the full
+    listing, and that is asserted separately below.
+    """
     assert main([]) == ExitCode.USAGE
-    assert "usage: fpr" in capsys.readouterr().out
+    out = capsys.readouterr().out
+    assert "inspect" in out and "protect" in out
+    assert "reads only" in out
+    assert "usage: fpr" not in out
+
+
+def test_help_still_prints_the_full_argparse_listing() -> None:
+    result = run(["--help"])
+    assert result.returncode == 0
+    assert "usage: fpr" in result.stdout

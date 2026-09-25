@@ -24,6 +24,8 @@ Then the paperwork, which is part of the release and not an afterthought:
 - [ ] `CHANGELOG.md` has an entry with today's date
 - [ ] `pyproject.toml` version and `fpr/__init__.py::__version__` agree
 - [ ] `docs/reports/verification-report.md` regenerated from this run
+- [ ] README test-count badge and quality table match that run's totals
+- [ ] `make assets` run, so the generated documentation images match the code
 - [ ] `docs/reports/known-limitations.md` still true
 - [ ] `docs/research/01-dependency-license-analysis.md` matches
       `make evidence` output

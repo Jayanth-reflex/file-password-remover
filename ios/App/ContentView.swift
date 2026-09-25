@@ -273,7 +273,10 @@ struct ContentView: View {
     }
 
     private var colophon: some View {
-        Text("No network access, no telemetry. Apache-2.0.")
+        // The version is here so a bug report can name the build it came from.
+        // It reads from FprKit rather than the app bundle, so what is shown is
+        // the version of the engine that produced the result above it.
+        Text("Version \(FprKit.version). No network access, no telemetry. Apache-2.0.")
             .caption()
             .padding(.top, 8)
     }

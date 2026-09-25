@@ -1,7 +1,7 @@
 # Threat model
 
-Scope: `fpr` 1.0.0 — the CLI, the desktop app and the Python API, running on a
-user's own machine against files that user chose.
+Scope: `fpr` 1.1.0 — the CLI, the desktop app, the Python API and the iOS and
+Android apps, running on a user's own device against files that user chose.
 
 ## What we are protecting
 
