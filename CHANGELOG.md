@@ -4,6 +4,51 @@ All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project uses
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.0] — 2026-09-25
+
+Protection in both directions, on two more platforms, behind one visual
+identity.
+
+### Added
+
+**Interfaces**
+- `fpr protect`: write a verified, password-protected copy of a PDF or a ZIP,
+  with a password you supply or one generated for you (`--generate`,
+  `--password-out`). There is deliberately no `--in-place`.
+- A generated-password mode built so that losing the only copy of a password is
+  hard to do by accident: the password is surfaced only after the encrypted file
+  exists, batches are refused, and `--json` returns it so an agent cannot
+  destroy the file it just created.
+- A menu: run `fpr` with no command and it prints every command, what it does,
+  and what it does to your files, instead of an argparse dump. The effect of
+  each command is written in words as well as carried in colour, so it reads
+  the same in a CI log and to a screen reader.
+- Virtual-terminal sequences are enabled on Windows, so the same colour that
+  macOS and Linux terminals show also appears in `cmd.exe` and PowerShell.
+
+**Platforms**
+- An iOS app and an Android app over Swift and Kotlin ports of the engine,
+  verified against the same cross-language test-vector corpus as the Python
+  implementation, plus an interop check that opens their output with Python.
+- A visual identity — hallmarking, not padlocks — shared by the CLI, the
+  desktop window and both apps, with a maker's-mark icon.
+
+**Project**
+- An end-to-end suite that drives the installed executable as a subprocess
+  through complete journeys, run on Linux, macOS and Windows in CI.
+- A version-consistency test: one number, declared in every platform's own file
+  format, checked in one place.
+
+### Known limitations
+
+`protect` covers PDF and ZIP only; the other adapters refuse rather than
+silently writing an unencrypted copy. 7-Zip is unsupported on iOS. iOS writes
+AES-128 for PDFs where the CLI and Android write AES-256, and says so in the
+hallmark row. Neither app is store-distributed
+([ADR-0011](docs/adr/0011-ship-mobile-apps-verified-not-published.md)).
+`--password-out` is owner-only on macOS and Linux; on Windows it inherits the
+directory's permissions.
+
 ## [1.0.0] — 2026-09-20
 
 First release.
@@ -71,4 +116,5 @@ erasure on modern storage.
 - Zero findings from bandit; zero known advisories in any pinned dependency as
   of 2026-09-19.
 
+[1.1.0]: https://github.com/Jayanth-reflex/file-password-remover/releases/tag/v1.1.0
 [1.0.0]: https://github.com/Jayanth-reflex/file-password-remover/releases/tag/v1.0.0

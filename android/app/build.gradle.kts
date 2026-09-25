@@ -12,8 +12,11 @@ android {
         applicationId = "dev.jayanth.fpr"
         minSdk = 26
         targetSdk = 35
-        versionCode = 1
-        versionName = "1.0.0"
+        // major * 10000 + minor * 100 + patch, so the integer Play orders
+        // releases by can be read back as the version a user reports.
+        // Checked against fpr.__version__ by tests/unit/test_version_consistency.py.
+        versionCode = 10100
+        versionName = "1.1.0"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 

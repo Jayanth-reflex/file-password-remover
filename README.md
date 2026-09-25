@@ -62,6 +62,14 @@ explicitly. ([ADR-0008](docs/adr/0008-owner-restriction-policy.md))
 
 ## The 60-second tour
 
+**Start by typing `fpr`.** The menu is the whole tool on one screen, and every
+command says what it does to your files before you run it — in words as well as
+in colour, so it reads the same in a CI log and to a screen reader:
+
+<p align="center">
+<img src="docs/assets/cli-menu.svg" alt="The fpr menu: inspect reads only, remove unlocks, protect locks, plus formats and version" width="620">
+</p>
+
 **Look before you leap.** `inspect` needs no password and changes nothing:
 
 ```console

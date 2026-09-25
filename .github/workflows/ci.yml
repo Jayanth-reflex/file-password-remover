@@ -83,6 +83,11 @@ jobs:
             python -m pytest -q -m "not slow" --cov=fpr --cov=fpr_gui --cov-report=xml
           fi
         shell: bash
+        env:
+          # The end-to-end suite skips itself when the console script is not
+          # installed, which is right locally and wrong here: a skip would
+          # quietly retire the only tests that run the binary a user runs.
+          FPR_E2E_REQUIRE: "1"
       - name: Upload coverage
         if: matrix.os == 'ubuntu-latest' && matrix.python == '3.12'
         uses: actions/upload-artifact@v4

@@ -75,6 +75,10 @@ checksums: ## SHA-256 for everything in dist/
 docs-check: ## Verify the docs' internal links resolve
 	$(BIN)/python scripts/check_docs.py
 
+assets: ## Regenerate the generated documentation assets
+	$(BIN)/python scripts/gen_menu_svg.py
+	$(BIN)/python scripts/gen_icon.py
+
 clean:
 	rm -rf build dist $(ARTIFACTS) .pytest_cache .mypy_cache .ruff_cache \
 	       .coverage htmlcov src/*.egg-info

@@ -45,6 +45,12 @@ def _commands() -> list[tuple[str, str]]:
             # "fpr [--json] [-v|-q] COMMAND" is a usage synopsis, not a command.
             if "[" in command:
                 continue
+            # So is "fpr COMMAND --help": the subcommand slot holds a
+            # metavariable rather than a command, which no parse can resolve.
+            # Narrow on purpose -- only an all-caps word in that one position.
+            words = command.split()
+            if len(words) > 1 and words[1].isupper() and words[1].isalpha():
+                continue
             # A trailing bare integer is the file-descriptor number of a shell
             # redirect ("--password-fd 3 3< file"), not an argument.
             parts = command.split()

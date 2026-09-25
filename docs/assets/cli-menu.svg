@@ -1,0 +1,39 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="674" height="422" viewBox="0 0 674 422" role="img" aria-label="The fpr menu, listing inspect, remove, protect, formats and version, each with what it does to your files">
+<rect width="674" height="422" rx="10" fill="#121417"/>
+<g font-family="SFMono-Regular,Menlo,Consolas,monospace" font-size="14">
+<text x="22.0" y="57" fill="#E8E6E1" xml:space="preserve">  </text>
+<text x="38.8" y="57" fill="#C6A664" xml:space="preserve">FPR</text>
+<text x="64.0" y="57" fill="#E8E6E1" xml:space="preserve">  </text>
+<text x="80.8" y="57" fill="#7C8087" xml:space="preserve">1.1.0</text>
+<text x="22.0" y="78" fill="#E8E6E1" xml:space="preserve">  Remove or add password protection. Everything happens on this machine.</text>
+<text x="22.0" y="120" fill="#E8E6E1" xml:space="preserve">  </text>
+<text x="38.8" y="120" fill="#63B7C4" xml:space="preserve">◆</text>
+<text x="47.2" y="120" fill="#E8E6E1" xml:space="preserve"> inspect FILE  what protection is on this file?      </text>
+<text x="492.4" y="120" fill="#63B7C4" xml:space="preserve">reads only</text>
+<text x="22.0" y="141" fill="#E8E6E1" xml:space="preserve">  </text>
+<text x="38.8" y="141" fill="#6FBF87" xml:space="preserve">◆</text>
+<text x="47.2" y="141" fill="#E8E6E1" xml:space="preserve"> remove  FILE  write an unlocked copy                </text>
+<text x="492.4" y="141" fill="#6FBF87" xml:space="preserve">unlocks</text>
+<text x="22.0" y="162" fill="#E8E6E1" xml:space="preserve">  </text>
+<text x="38.8" y="162" fill="#C6A664" xml:space="preserve">◆</text>
+<text x="47.2" y="162" fill="#E8E6E1" xml:space="preserve"> protect FILE  write a locked copy                   </text>
+<text x="492.4" y="162" fill="#C6A664" xml:space="preserve">locks</text>
+<text x="22.0" y="183" fill="#E8E6E1" xml:space="preserve">  </text>
+<text x="38.8" y="183" fill="#7C8087" xml:space="preserve">◇</text>
+<text x="47.2" y="183" fill="#E8E6E1" xml:space="preserve"> formats       what is supported, and what is not</text>
+<text x="22.0" y="204" fill="#E8E6E1" xml:space="preserve">  </text>
+<text x="38.8" y="204" fill="#7C8087" xml:space="preserve">◇</text>
+<text x="47.2" y="204" fill="#E8E6E1" xml:space="preserve"> version       versions of everything involved</text>
+<text x="22.0" y="246" fill="#E8E6E1" xml:space="preserve">  </text>
+<text x="38.8" y="246" fill="#C6A664" xml:space="preserve">TRY</text>
+<text x="22.0" y="267" fill="#E8E6E1" xml:space="preserve">  fpr inspect report.pdf</text>
+<text x="22.0" y="288" fill="#E8E6E1" xml:space="preserve">  fpr remove report.pdf</text>
+<text x="22.0" y="309" fill="#E8E6E1" xml:space="preserve">  fpr protect taxes.pdf --generate</text>
+<text x="22.0" y="351" fill="#E8E6E1" xml:space="preserve">  </text>
+<text x="38.8" y="351" fill="#7C8087" xml:space="preserve">──────────────────────────────────────────────</text>
+<text x="22.0" y="372" fill="#E8E6E1" xml:space="preserve">  </text>
+<text x="38.8" y="372" fill="#7C8087" xml:space="preserve">fpr COMMAND --help</text>
+<text x="190.0" y="372" fill="#E8E6E1" xml:space="preserve"> for every option. Your original file is never changed.</text>
+<text x="22.0" y="393" fill="#E8E6E1" xml:space="preserve">  </text>
+<text x="38.8" y="393" fill="#7C8087" xml:space="preserve">This tool never guesses, recovers or cracks a password.</text>
+</g></svg>

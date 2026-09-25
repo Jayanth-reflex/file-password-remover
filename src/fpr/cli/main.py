@@ -203,7 +203,12 @@ def main(argv: list[str] | None = None) -> int:
     renderer = Renderer(as_json=args.json, quiet=args.quiet)
 
     if args.command is None:
-        parser.print_help()
+        # The menu, not an argparse dump. `fpr --help` still prints the full
+        # listing; a bare `fpr` is somebody arriving, and the first screen has
+        # to answer "what will this do to my file?" rather than enumerate flags.
+        # The exit code stays USAGE: no command ran, and scripts that branch on
+        # it were written against that.
+        renderer.menu()
         return int(ExitCode.USAGE)
 
     try:
