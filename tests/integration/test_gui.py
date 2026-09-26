@@ -264,9 +264,11 @@ def test_a_password_the_user_chose_is_not_echoed(app, pdf_plain: Path) -> None:
     _settle(app)
     app.generate_var.set(False)
     app.password_var.set("a-password-i-chose")
+    app.confirm_var.set("a-password-i-chose")
 
     app.on_run()
     _settle(app)
 
+    assert (pdf_plain.parent / "plain-protected.pdf").exists()
     assert app.generated_label.cget("text") == ""
     assert "a-password-i-chose" not in app.status.cget("text")

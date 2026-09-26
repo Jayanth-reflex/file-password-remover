@@ -106,17 +106,11 @@ def test_a_wrong_password_then_the_right_one(app, tmp_path: Path) -> None:
     app.load(source)
     settle(app)
     app.password_var.set(WRONG_PASSWORD)
-    import tkinter.messagebox
-
-    shown: list[str] = []
-    original = tkinter.messagebox.showerror
-    tkinter.messagebox.showerror = lambda *a, **_k: shown.append(str(a))  # type: ignore[assignment]
-    try:
-        app.on_run()
-        settle(app)
-    finally:
-        tkinter.messagebox.showerror = original
+    app.on_run()
+    settle(app)
     assert not (tmp_path / "locked-unprotected.pdf").exists()
+    assert app.dialogs, "a wrong password produced no message"
+    app.dialogs.clear()
 
     app.password_var.set(SAMPLE_PASSWORD)
     app.on_run()
@@ -166,20 +160,12 @@ def test_a_chosen_password_must_be_typed_twice(app, tmp_path: Path) -> None:
     app.generate_var.set(False)
     app.password_var.set("typed carefully")
     app.confirm_var.set("typed carefuly")
-
-    import tkinter.messagebox
-
-    shown: list[str] = []
-    original = tkinter.messagebox.showinfo
-    tkinter.messagebox.showinfo = lambda *a, **_k: shown.append(" ".join(map(str, a)))  # type: ignore[assignment]
-    try:
-        app.on_run()
-        settle(app)
-    finally:
-        tkinter.messagebox.showinfo = original
+    app.on_run()
+    settle(app)
 
     assert not (tmp_path / "notes-protected.pdf").exists(), "protected with a mismatched password"
-    assert any("match" in message.lower() for message in shown)
+    assert any("match" in message.lower() for _, message in app.dialogs)
+    app.dialogs.clear()
 
 
 def test_a_chosen_password_typed_twice_protects_and_reopens(app, tmp_path: Path) -> None:

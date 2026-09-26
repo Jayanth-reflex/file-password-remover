@@ -190,13 +190,43 @@ def tk_root():
 
 
 @pytest.fixture
-def app(tk_root):
+def app(tk_root, monkeypatch):
+    """The desktop window, with its dialogs recorded instead of shown.
+
+    A modal dialog waits for a click. Under xvfb in CI there is nobody to
+    click, so one unexpected dialog hung every test job until its timeout.
+    Here every dialog is appended to ``app.dialogs`` instead, and a test that
+    leaves one there without looking at it fails -- a dialog nobody expected
+    is a finding, not something to wait out.
+    """
+    from tkinter import messagebox
+
     from fpr_gui.app import App
+
+    dialogs: list[tuple[str, str]] = []
+    for kind in ("showinfo", "showwarning", "showerror"):
+        monkeypatch.setattr(
+            messagebox,
+            kind,
+            lambda _title="", message="", *_a, _kind=kind, **_k: dialogs.append(
+                (_kind, str(message))
+            ),
+        )
+    for kind in ("askyesno", "askokcancel"):
+        monkeypatch.setattr(
+            messagebox,
+            kind,
+            lambda _title="", message="", *_a, _kind=kind, **_k: (
+                dialogs.append((_kind, str(message))) or False
+            ),
+        )
 
     for child in tk_root.winfo_children():
         child.destroy()
     instance = App(tk_root)
+    instance.dialogs = dialogs
     yield instance
     instance.stop()
     for child in tk_root.winfo_children():
         child.destroy()
+    assert not dialogs, f"unexpected dialog(s) left unexamined: {dialogs}"
