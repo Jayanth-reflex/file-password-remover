@@ -167,3 +167,36 @@ def pytest_collection_modifyitems(config, items):
     for item in items:
         if "sevenzip" in item.keywords:
             item.add_marker(skip)
+
+
+# ------------------------------------------------------------------ desktop
+@pytest.fixture(scope="session")
+def tk_root():
+    """One Tk root for the whole session.
+
+    Creating and destroying several Tk roots inside one process hangs on macOS,
+    so the window is built once and its contents are rebuilt per test. Shared
+    here because both the integration tests and the end-to-end journeys drive
+    the window, and they run in the same process.
+    """
+    tk = pytest.importorskip("tkinter")
+    try:
+        root = tk.Tk()
+    except tk.TclError as exc:  # pragma: no cover - headless CI
+        pytest.skip(f"no display: {exc}")
+    root.withdraw()
+    yield root
+    root.destroy()
+
+
+@pytest.fixture
+def app(tk_root):
+    from fpr_gui.app import App
+
+    for child in tk_root.winfo_children():
+        child.destroy()
+    instance = App(tk_root)
+    yield instance
+    instance.stop()
+    for child in tk_root.winfo_children():
+        child.destroy()

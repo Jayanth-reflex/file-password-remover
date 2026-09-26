@@ -43,6 +43,35 @@ def sources() -> list[tuple[str, Path]]:
     return files
 
 
+def ui_test_sources() -> list[tuple[str, Path]]:
+    """XCUITest journeys: the app driven through the system document picker."""
+    return [(f"UITests/{p.name}", p) for p in sorted((IOS / "UITests").glob("*.swift"))]
+
+
+def ui_test_settings(configuration: str) -> dict[str, str]:
+    settings = {
+        "CODE_SIGN_STYLE": "Automatic",
+        "CURRENT_PROJECT_VERSION": "1",
+        "GENERATE_INFOPLIST_FILE": "YES",
+        "IPHONEOS_DEPLOYMENT_TARGET": DEPLOYMENT_TARGET,
+        "MARKETING_VERSION": MARKETING_VERSION,
+        "PRODUCT_BUNDLE_IDENTIFIER": f"{BUNDLE_ID}.uitests",
+        "PRODUCT_NAME": "$(TARGET_NAME)",
+        "SDKROOT": "iphoneos",
+        "SUPPORTED_PLATFORMS": "iphoneos iphonesimulator",
+        "SWIFT_VERSION": "5.0",
+        "TARGETED_DEVICE_FAMILY": "1,2",
+        "TEST_TARGET_NAME": "FilePasswordRemover",
+    }
+    if configuration == "Debug":
+        settings |= {
+            "DEBUG_INFORMATION_FORMAT": "dwarf",
+            "ONLY_ACTIVE_ARCH": "YES",
+            "SWIFT_OPTIMIZATION_LEVEL": "-Onone",
+        }
+    return settings
+
+
 def build_settings(configuration: str) -> dict[str, str]:
     settings = {
         "ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS": "YES",
@@ -115,6 +144,15 @@ def main() -> int:
     project_id = oid("project")
     config_list_project = oid("configlist/project")
     config_list_target = oid("configlist/target")
+    ui_files = ui_test_sources()
+    ui_target = oid("target/uitests")
+    ui_product = oid("product/uitests")
+    ui_group = oid("group/uitests")
+    ui_sources_phase = oid("phase/uitests/sources")
+    ui_frameworks_phase = oid("phase/uitests/frameworks")
+    ui_config_list = oid("configlist/uitests")
+    ui_proxy = oid("proxy/app")
+    ui_dependency = oid("dependency/app")
 
     lines: list[str] = []
     add = lines.append
@@ -133,10 +171,25 @@ def main() -> int:
             f"\t\t{oid('buildfile/' + relative)} /* {Path(relative).name} in Sources */ = "
             f"{{isa = PBXBuildFile; fileRef = {oid('fileref/' + relative)} /* {Path(relative).name} */; }};"
         )
+    for relative, _ in ui_files:
+        add(
+            f"\t\t{oid('buildfile/' + relative)} /* {Path(relative).name} in Sources */ = "
+            f"{{isa = PBXBuildFile; fileRef = {oid('fileref/' + relative)} /* {Path(relative).name} */; }};"
+        )
     add("/* End PBXBuildFile section */")
 
+    add("\n/* Begin PBXContainerItemProxy section */")
+    add(f"\t\t{ui_proxy} /* PBXContainerItemProxy */ = {{")
+    add("\t\t\tisa = PBXContainerItemProxy;")
+    add(f"\t\t\tcontainerPortal = {project_id} /* Project object */;")
+    add("\t\t\tproxyType = 1;")
+    add(f"\t\t\tremoteGlobalIDString = {target_id};")
+    add("\t\t\tremoteInfo = FilePasswordRemover;")
+    add("\t\t};")
+    add("/* End PBXContainerItemProxy section */")
+
     add("\n/* Begin PBXFileReference section */")
-    for relative, path in files:
+    for relative, path in [*files, *ui_files]:
         add(
             f"\t\t{oid('fileref/' + relative)} /* {Path(relative).name} */ = "
             f"{{isa = PBXFileReference; lastKnownFileType = sourcecode.swift; "
@@ -148,10 +201,22 @@ def main() -> int:
         "explicitFileType = wrapper.application; includeInIndex = 0; "
         "path = FilePasswordRemover.app; sourceTree = BUILT_PRODUCTS_DIR; };"
     )
+    add(
+        f"\t\t{ui_product} /* FilePasswordRemoverUITests.xctest */ = {{isa = PBXFileReference; "
+        "explicitFileType = wrapper.cfbundle; includeInIndex = 0; "
+        "path = FilePasswordRemoverUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };"
+    )
     add("/* End PBXFileReference section */")
 
     add("\n/* Begin PBXFrameworksBuildPhase section */")
     add(f"\t\t{frameworks_phase} = {{")
+    add("\t\t\tisa = PBXFrameworksBuildPhase;")
+    add("\t\t\tbuildActionMask = 2147483647;")
+    add("\t\t\tfiles = (")
+    add("\t\t\t);")
+    add("\t\t\trunOnlyForDeploymentPostprocessing = 0;")
+    add("\t\t};")
+    add(f"\t\t{ui_frameworks_phase} = {{")
     add("\t\t\tisa = PBXFrameworksBuildPhase;")
     add("\t\t\tbuildActionMask = 2147483647;")
     add("\t\t\tfiles = (")
@@ -166,6 +231,7 @@ def main() -> int:
     add("\t\t\tchildren = (")
     add(f"\t\t\t\t{group_app} /* App */,")
     add(f"\t\t\t\t{group_kit} /* FprKit */,")
+    add(f"\t\t\t\t{ui_group} /* UITests */,")
     add(f"\t\t\t\t{group_products} /* Products */,")
     add("\t\t\t);")
     add('\t\t\tsourceTree = "<group>";')
@@ -173,11 +239,12 @@ def main() -> int:
     for group_id, label, prefix in (
         (group_app, "App", "App/"),
         (group_kit, "FprKit", "FprKit/"),
+        (ui_group, "UITests", "UITests/"),
     ):
         add(f"\t\t{group_id} /* {label} */ = {{")
         add("\t\t\tisa = PBXGroup;")
         add("\t\t\tchildren = (")
-        for relative, _ in files:
+        for relative, _ in [*files, *ui_files]:
             if relative.startswith(prefix):
                 add(f"\t\t\t\t{oid('fileref/' + relative)} /* {Path(relative).name} */,")
         add("\t\t\t);")
@@ -188,6 +255,7 @@ def main() -> int:
     add("\t\t\tisa = PBXGroup;")
     add("\t\t\tchildren = (")
     add(f"\t\t\t\t{product_id} /* FilePasswordRemover.app */,")
+    add(f"\t\t\t\t{ui_product} /* FilePasswordRemoverUITests.xctest */,")
     add("\t\t\t);")
     add("\t\t\tname = Products;")
     add('\t\t\tsourceTree = "<group>";')
@@ -212,6 +280,23 @@ def main() -> int:
     add(f"\t\t\tproductReference = {product_id} /* FilePasswordRemover.app */;")
     add('\t\t\tproductType = "com.apple.product-type.application";')
     add("\t\t};")
+    add(f"\t\t{ui_target} /* FilePasswordRemoverUITests */ = {{")
+    add("\t\t\tisa = PBXNativeTarget;")
+    add(f"\t\t\tbuildConfigurationList = {ui_config_list};")
+    add("\t\t\tbuildPhases = (")
+    add(f"\t\t\t\t{ui_sources_phase},")
+    add(f"\t\t\t\t{ui_frameworks_phase},")
+    add("\t\t\t);")
+    add("\t\t\tbuildRules = (")
+    add("\t\t\t);")
+    add("\t\t\tdependencies = (")
+    add(f"\t\t\t\t{ui_dependency} /* PBXTargetDependency */,")
+    add("\t\t\t);")
+    add("\t\t\tname = FilePasswordRemoverUITests;")
+    add("\t\t\tproductName = FilePasswordRemoverUITests;")
+    add(f"\t\t\tproductReference = {ui_product} /* FilePasswordRemoverUITests.xctest */;")
+    add('\t\t\tproductType = "com.apple.product-type.bundle.ui-testing";')
+    add("\t\t};")
     add("/* End PBXNativeTarget section */")
 
     add("\n/* Begin PBXProject section */")
@@ -224,6 +309,10 @@ def main() -> int:
     add("\t\t\t\tTargetAttributes = {")
     add(f"\t\t\t\t\t{target_id} = {{")
     add("\t\t\t\t\t\tCreatedOnToolsVersion = 16.0;")
+    add("\t\t\t\t\t};")
+    add(f"\t\t\t\t\t{ui_target} = {{")
+    add("\t\t\t\t\t\tCreatedOnToolsVersion = 16.0;")
+    add(f"\t\t\t\t\t\tTestTargetID = {target_id};")
     add("\t\t\t\t\t};")
     add("\t\t\t\t};")
     add("\t\t\t};")
@@ -241,6 +330,7 @@ def main() -> int:
     add('\t\t\tprojectRoot = "";')
     add("\t\t\ttargets = (")
     add(f"\t\t\t\t{target_id} /* FilePasswordRemover */,")
+    add(f"\t\t\t\t{ui_target} /* FilePasswordRemoverUITests */,")
     add("\t\t\t);")
     add("\t\t};")
     add("/* End PBXProject section */")
@@ -265,22 +355,48 @@ def main() -> int:
     add("\t\t\t);")
     add("\t\t\trunOnlyForDeploymentPostprocessing = 0;")
     add("\t\t};")
+    add(f"\t\t{ui_sources_phase} = {{")
+    add("\t\t\tisa = PBXSourcesBuildPhase;")
+    add("\t\t\tbuildActionMask = 2147483647;")
+    add("\t\t\tfiles = (")
+    for relative, _ in ui_files:
+        add(f"\t\t\t\t{oid('buildfile/' + relative)} /* {Path(relative).name} in Sources */,")
+    add("\t\t\t);")
+    add("\t\t\trunOnlyForDeploymentPostprocessing = 0;")
+    add("\t\t};")
     add("/* End PBXSourcesBuildPhase section */")
 
+    add("\n/* Begin PBXTargetDependency section */")
+    add(f"\t\t{ui_dependency} /* PBXTargetDependency */ = {{")
+    add("\t\t\tisa = PBXTargetDependency;")
+    add(f"\t\t\ttarget = {target_id} /* FilePasswordRemover */;")
+    add(f"\t\t\ttargetProxy = {ui_proxy} /* PBXContainerItemProxy */;")
+    add("\t\t};")
+    add("/* End PBXTargetDependency section */")
+
     add("\n/* Begin XCBuildConfiguration section */")
-    for scope in ("project", "target"):
+    for scope in ("project", "target", "uitests"):
         for configuration in ("Debug", "Release"):
+            settings = (
+                ui_test_settings(configuration)
+                if scope == "uitests"
+                else build_settings(configuration)
+            )
             add(f"\t\t{oid(f'config/{scope}/{configuration}')} /* {configuration} */ = {{")
             add("\t\t\tisa = XCBuildConfiguration;")
             add("\t\t\tbuildSettings = {")
-            add(render_settings(build_settings(configuration), "\t\t\t\t"))
+            add(render_settings(settings, "\t\t\t\t"))
             add("\t\t\t};")
             add(f"\t\t\tname = {configuration};")
             add("\t\t};")
     add("/* End XCBuildConfiguration section */")
 
     add("\n/* Begin XCConfigurationList section */")
-    for scope, list_id in (("project", config_list_project), ("target", config_list_target)):
+    for scope, list_id in (
+        ("project", config_list_project),
+        ("target", config_list_target),
+        ("uitests", ui_config_list),
+    ):
         add(f"\t\t{list_id} = {{")
         add("\t\t\tisa = XCConfigurationList;")
         add("\t\t\tbuildConfigurations = (")
@@ -298,8 +414,64 @@ def main() -> int:
 
     PROJECT.mkdir(parents=True, exist_ok=True)
     (PROJECT / "project.pbxproj").write_text("\n".join(lines) + "\n")
-    print(f"wrote {PROJECT} with {len(files)} source files")
+    schemes = PROJECT / "xcshareddata" / "xcschemes"
+    schemes.mkdir(parents=True, exist_ok=True)
+    (schemes / "FilePasswordRemover.xcscheme").write_text(
+        scheme(target_id, ui_target), encoding="utf-8"
+    )
+    print(f"wrote {PROJECT} with {len(files)} source files and {len(ui_files)} UI test files")
     return 0
+
+
+def scheme(app_target: str, ui_target: str) -> str:
+    """A shared scheme. Without one, Xcode invents a scheme per user that does
+    not include the UI tests, and `xcodebuild test` has nothing to run."""
+
+    def reference(target: str, name: str, product: str) -> str:
+        return (
+            "            <BuildableReference\n"
+            '               BuildableIdentifier = "primary"\n'
+            f'               BlueprintIdentifier = "{target}"\n'
+            f'               BuildableName = "{product}"\n'
+            f'               BlueprintName = "{name}"\n'
+            '               ReferencedContainer = "container:FilePasswordRemover.xcodeproj">\n'
+            "            </BuildableReference>\n"
+        )
+
+    app = reference(app_target, "FilePasswordRemover", "FilePasswordRemover.app")
+    tests = reference(ui_target, "FilePasswordRemoverUITests", "FilePasswordRemoverUITests.xctest")
+    return (
+        '<?xml version="1.0" encoding="UTF-8"?>\n'
+        '<Scheme LastUpgradeVersion = "1600" version = "1.7">\n'
+        '   <BuildAction parallelizeBuildables = "YES" buildImplicitDependencies = "YES">\n'
+        "      <BuildActionEntries>\n"
+        '         <BuildActionEntry buildForTesting = "YES" buildForRunning = "YES" '
+        'buildForProfiling = "YES" buildForArchiving = "YES" buildForAnalyzing = "YES">\n'
+        + app.replace("            ", "            ", 1)
+        + "         </BuildActionEntry>\n"
+        "      </BuildActionEntries>\n"
+        "   </BuildAction>\n"
+        '   <TestAction buildConfiguration = "Debug" '
+        'selectedDebuggerIdentifier = "Xcode.DebuggerFoundation.Debugger.LLDB" '
+        'selectedLauncherIdentifier = "Xcode.DebuggerFoundation.Launcher.LLDB" '
+        'shouldUseLaunchSchemeArgsEnv = "YES">\n'
+        "      <Testables>\n"
+        '         <TestableReference skipped = "NO">\n' + tests + "         </TestableReference>\n"
+        "      </Testables>\n"
+        "   </TestAction>\n"
+        '   <LaunchAction buildConfiguration = "Debug" '
+        'selectedDebuggerIdentifier = "Xcode.DebuggerFoundation.Debugger.LLDB" '
+        'selectedLauncherIdentifier = "Xcode.DebuggerFoundation.Launcher.LLDB" '
+        'launchStyle = "0" useCustomWorkingDirectory = "NO" ignoresPersistentStateOnLaunch = "NO" '
+        'debugDocumentVersioning = "YES" debugServiceExtension = "internal" allowLocationSimulation = "YES">\n'
+        '      <BuildableProductRunnable runnableDebuggingMode = "0">\n'
+        + app
+        + "      </BuildableProductRunnable>\n"
+        "   </LaunchAction>\n"
+        '   <ArchiveAction buildConfiguration = "Release" revealArchiveInOrganizer = "YES">\n'
+        "   </ArchiveAction>\n"
+        "</Scheme>\n"
+    )
 
 
 if __name__ == "__main__":

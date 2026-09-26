@@ -68,12 +68,17 @@ def fpr(fpr_bin: Path, tmp_path: Path) -> Callable[..., subprocess.CompletedProc
     def _run(
         *args: str,
         stdin: str | None = None,
-        env: dict[str, str] | None = None,
+        env: dict[str, str | None] | None = None,
     ) -> subprocess.CompletedProcess[str]:
         environment = dict(os.environ)
         # Colour would put escape sequences through every assertion below.
         environment["NO_COLOR"] = "1"
-        environment.update(env or {})
+        # A value of None removes the variable, so a test can undo the default.
+        for key, value in (env or {}).items():
+            if value is None:
+                environment.pop(key, None)
+            else:
+                environment[key] = value
         return subprocess.run(
             [str(fpr_bin), *args],
             cwd=tmp_path,
@@ -81,6 +86,12 @@ def fpr(fpr_bin: Path, tmp_path: Path) -> Callable[..., subprocess.CompletedProc
             stdin=subprocess.DEVNULL if stdin is None else None,
             capture_output=True,
             text=True,
+            # The child may legitimately write in a narrower encoding than
+            # this process reads in -- that is what several of these tests set
+            # up on purpose. Decoding must not turn its output into a crash in
+            # the harness.
+            encoding="utf-8",
+            errors="replace",
             timeout=TIMEOUT,
             env=environment,
             check=False,
