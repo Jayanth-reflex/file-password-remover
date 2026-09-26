@@ -263,3 +263,28 @@ def test_help_still_prints_the_full_argparse_listing() -> None:
     result = run(["--help"])
     assert result.returncode == 0
     assert "usage: fpr" in result.stdout
+
+
+# ------------------------------------------------------------------ --suffix
+def test_a_suffix_that_starts_with_a_dash_is_accepted(pdf_encrypted: Path) -> None:
+    """The default suffix is `-unprotected`, so `--suffix -open` is what people type.
+
+    argparse reads any word starting with a dash as an option, and rejects it
+    as a missing value; `--suffix=-open` works but nobody guesses that.
+    """
+    result = run(
+        ["remove", str(pdf_encrypted), "--suffix", "-open", "--password-stdin"],
+        stdin=SAMPLE_PASSWORD,
+    )
+    assert result.returncode == ExitCode.OK, result.stderr
+    assert (pdf_encrypted.parent / "secret-open.pdf").exists()
+
+
+def test_a_real_option_after_suffix_is_still_a_missing_value(pdf_encrypted: Path) -> None:
+    """Joining must not swallow a flag: `--suffix --overwrite` is a mistake."""
+    result = run(
+        ["remove", str(pdf_encrypted), "--suffix", "--overwrite", "--password-stdin"],
+        stdin=SAMPLE_PASSWORD,
+    )
+    assert result.returncode == ExitCode.USAGE
+    assert not list(pdf_encrypted.parent.glob("*--overwrite*"))
