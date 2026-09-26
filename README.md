@@ -13,7 +13,7 @@
 [![Release](https://img.shields.io/github/v/release/Jayanth-reflex/file-password-remover?sort=semver&color=b4502a)](https://github.com/Jayanth-reflex/file-password-remover/releases/latest)
 [![Container](https://img.shields.io/badge/ghcr.io-signed-2f6b46?logo=docker&logoColor=white)](https://github.com/Jayanth-reflex/file-password-remover/pkgs/container/file-password-remover)
 
-[![Tests](https://img.shields.io/badge/tests-387%20passing-brightgreen)](docs/reports/verification-report.md)
+[![Tests](https://img.shields.io/badge/tests-507%20passing-brightgreen)](docs/reports/verification-report.md)
 [![Platforms](https://img.shields.io/badge/CI-macOS%20%C2%B7%20Linux%20%C2%B7%20Windows-informational)](#platform-support)
 [![Python](https://img.shields.io/badge/python-3.10%20%E2%80%93%203.13-blue)](pyproject.toml)
 [![Network](https://img.shields.io/badge/network-none-success)](docs/adr/0002-local-only-no-backend.md)
@@ -471,7 +471,7 @@ the matrix existing at all.
 
 | Tests | Coverage | Types | Static analysis | Dependencies |
 | :---: | :---: | :---: | :---: | :---: |
-| **387** | **89 %** | `mypy --strict` clean | `bandit` — 0 findings | 9 pinned · **0 advisories** |
+| **507** | **89 %** | `mypy --strict` clean | `bandit` — 0 findings | 9 pinned · **0 advisories** |
 
 </div>
 
@@ -481,6 +481,14 @@ ZipCrypto writer implemented in this repository *from the specifications*, then
 decrypted by the third-party libraries under test. A shared misunderstanding of
 the format would not slip through unnoticed.
 ([ADR-0009](docs/adr/0009-own-fixture-generators.md))
+
+**End to end, on every surface.** The installed CLI through every feature, in
+a real terminal and a real Windows console, and in seven shells -- sh, dash,
+bash, zsh, PowerShell 7, Windows PowerShell 5.1 and cmd.exe; the desktop window
+through its own controls; the iOS app through the system document picker; the
+Android app on an emulator. That suite found five bugs no unit test could see,
+including one that could lose a generated password.
+([docs/ops/e2e.md](docs/ops/e2e.md))
 
 Reproduce the lot with one command:
 

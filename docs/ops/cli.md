@@ -94,7 +94,7 @@ source; without it, no success is reported.
 | --- | --- |
 | `-o`, `--output PATH` | Exact output path. Single input only |
 | `--output-dir DIR` | Directory for the copies; created if missing |
-| `--suffix TEXT` | Suffix on the stem (default `-unprotected`) |
+| `--suffix TEXT` | Suffix on the stem (default `-unprotected`); `--suffix -open` works as written |
 | `--overwrite` | Replace an existing output. Off by default |
 | `--in-place` | Replace the original. Off by default, and still verified first |
 | `--no-preserve-timestamps` | Do not copy the source's mtime onto the output |
@@ -127,6 +127,12 @@ Pick one. With none of these, the tool prompts on the terminal.
 There is no `--password VALUE`. Command lines are readable by every process on
 the machine and are saved in shell history, so the option is refused with an
 explanation. See [ADR-0007](../adr/0007-no-password-on-argv.md).
+
+A file or pipe is read the way the editor or shell that wrote it meant: one
+trailing `\n` or `\r\n` is dropped, and a byte-order mark at the start is taken
+as the encoding rather than as part of the password. That covers Windows
+PowerShell 5.1, whose `"secret" > pw.txt` writes UTF-16, and Notepad's
+"UTF-8 with BOM".
 
 ---
 
