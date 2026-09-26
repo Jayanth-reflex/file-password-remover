@@ -193,11 +193,26 @@ struct ContentView: View {
                     .background(Theme.surface, in: RoundedRectangle(cornerRadius: 10))
                     .foregroundStyle(Theme.platinum)
                     .accessibilityIdentifier("new-password-field")
+                // Typed twice: behind a mask, one wrong key would lock the file
+                // with a password nobody knows, and it cannot be recovered.
+                SecureField("Type it again", text: $model.confirmation)
+                    .textContentType(.newPassword)
+                    .textFieldStyle(.plain)
+                    .padding(14)
+                    .background(Theme.surface, in: RoundedRectangle(cornerRadius: 10))
+                    .foregroundStyle(Theme.platinum)
+                    .accessibilityIdentifier("confirm-password-field")
+                if !model.confirmation.isEmpty && model.password != model.confirmation {
+                    Text("The two passwords do not match.")
+                        .font(.footnote)
+                        .foregroundStyle(Theme.oxide)
+                        .accessibilityIdentifier("password-mismatch")
+                }
             }
 
             primaryButton(
                 "Protect this file",
-                enabled: generatePassword || !model.password.isEmpty
+                enabled: model.canProtect(generatePassword: generatePassword)
             ) {
                 model.protectFile(generatePassword: generatePassword)
             }
