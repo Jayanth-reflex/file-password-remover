@@ -210,10 +210,28 @@ class App:
             pwbox,
             text=t("gui.generate", "Generate a strong password for me"),
             variable=self.generate_var,
-            command=self._toggle_password,
+            command=self._sync_password_mode,
         )
         generate_check.grid(row=1, column=0, columnspan=2, sticky="w", pady=(6, 0))
         self._protect_only = [generate_check]
+
+        # A password the user chooses is typed twice. Behind a mask, one wrong
+        # key would lock the file with a password nobody knows, and this tool
+        # will not crack it back open -- the CLI asks twice for the same reason.
+        self.confirm_row = ttk.Frame(pwbox)
+        self.confirm_row.grid(row=2, column=0, columnspan=2, sticky="ew", pady=(6, 0))
+        self.confirm_row.columnconfigure(0, weight=1)
+        ttk.Label(
+            self.confirm_row,
+            text=t("gui.password.confirm", "Type it again"),
+            style="Muted.TLabel",
+        ).grid(row=0, column=0, sticky="w")
+        self.confirm_var = tk.StringVar()
+        self.confirm_entry = ttk.Entry(
+            self.confirm_row, textvariable=self.confirm_var, show="•", font=self.fonts["mono"]
+        )
+        self.confirm_entry.grid(row=1, column=0, sticky="ew", pady=(2, 0))
+        self.confirm_row.grid_remove()
 
         # ---- destination
         self._section(outer, row.next(), t("gui.output", "Destination"), top=PAD * 2)
@@ -404,10 +422,22 @@ class App:
                 widget.grid_remove()
             else:
                 widget.grid()
+        self._sync_password_mode()
+
+    def _sync_password_mode(self) -> None:
+        """Offer the confirmation field only for a password the user chooses."""
+        choosing = self.available == "protect" and not self.generate_var.get()
+        if choosing:
+            self.confirm_row.grid()
+        else:
+            self.confirm_row.grid_remove()
+            self.confirm_var.set("")
         self._toggle_password()
 
     def _toggle_password(self) -> None:
-        self.password_entry.configure(show="" if self.show_var.get() else "•")
+        show = "" if self.show_var.get() else "•"
+        self.password_entry.configure(show=show)
+        self.confirm_entry.configure(show=show)
 
     def _set_detail(self, text: str) -> None:
         self.detail.configure(state="normal")
@@ -507,9 +537,21 @@ class App:
 
     def _run_protect(self, source: Path, generating: bool) -> None:
         """Write a protected copy, and surface a generated password once."""
+        if not generating and self.password_var.get() != self.confirm_var.get():
+            messagebox.showinfo(
+                t("gui.title", "File Password Remover"),
+                t(
+                    "gui.password.mismatch",
+                    "The two passwords do not match. Nothing was written.",
+                ),
+            )
+            self.confirm_var.set("")
+            self.confirm_entry.focus_set()
+            return
         options = ProtectOptions(overwrite=self.overwrite_var.get())
         secret = passwords.generate() if generating else Secret.from_text(self.password_var.get())
         self.password_var.set("")
+        self.confirm_var.set("")
         # Only shown when this tool made it: a password the user typed is
         # already theirs, and echoing it would only put it somewhere new.
         self._generated = None

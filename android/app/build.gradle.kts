@@ -68,4 +68,10 @@ dependencies {
     androidTestImplementation(libs.androidx.test.runner)
     androidTestImplementation(libs.androidx.test.junit)
     androidTestImplementation(libs.junit)
+    // UI journeys: Compose drives the screen, Espresso-Intents stands in for
+    // the system file picker, which belongs to another app.
+    androidTestImplementation(platform(libs.androidx.compose.bom))
+    androidTestImplementation(libs.androidx.ui.test.junit4)
+    androidTestImplementation(libs.androidx.test.espresso.intents)
+    debugImplementation(libs.androidx.ui.test.manifest)
 }

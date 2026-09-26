@@ -66,7 +66,9 @@ jobs:
           cache: pip
       - name: Install Tk (Linux)
         if: runner.os == 'Linux'
-        run: sudo apt-get update && sudo apt-get install -y python3-tk xvfb
+        # zsh is for the shell journeys in tests/e2e; dash, bash and pwsh are
+        # already on the image.
+        run: sudo apt-get update && sudo apt-get install -y python3-tk xvfb zsh
       - run: pip install -e ".[dev,sevenzip]"
       - name: Run tests
         # -m "not slow": the performance suite writes and encrypts 200 MiB, which
@@ -88,6 +90,9 @@ jobs:
           # installed, which is right locally and wrong here: a skip would
           # quietly retire the only tests that run the binary a user runs.
           FPR_E2E_REQUIRE: "1"
+          # Shells whose journey must run on this runner; a missing one fails
+          # the job rather than quietly shrinking the matrix.
+          FPR_E2E_SHELLS: ${{ runner.os == 'Windows' && 'bash,pwsh,powershell,cmd' || 'sh,dash,bash,zsh,pwsh' }}
       - name: Upload coverage
         if: matrix.os == 'ubuntu-latest' && matrix.python == '3.12'
         uses: actions/upload-artifact@v4

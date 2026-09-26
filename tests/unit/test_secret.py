@@ -122,3 +122,48 @@ def test_equality_is_identity_only() -> None:
     assert a == a
     a.close()
     b.close()
+
+
+# ------------------------------------------------- what Windows editors write
+@pytest.mark.parametrize(
+    ("label", "raw"),
+    [
+        # Windows PowerShell 5.1: `"secret" > pw.txt` and Out-File default.
+        ("utf-16le-bom-crlf", b"\xff\xfe" + "héllo wörld\r\n".encode("utf-16-le")),
+        ("utf-16be-bom", b"\xfe\xff" + "héllo wörld\n".encode("utf-16-be")),
+        # Notepad's "UTF-8 with BOM", and `Out-File -Encoding utf8` in 5.1.
+        ("utf-8-bom-crlf", b"\xef\xbb\xbf" + "héllo wörld\r\n".encode()),
+        ("utf-8-bom", b"\xef\xbb\xbf" + "héllo wörld".encode()),
+    ],
+)
+def test_a_byte_order_mark_is_read_as_an_encoding_not_as_password(
+    tmp_path, label: str, raw: bytes
+) -> None:
+    """The user typed the right password; the editor chose the encoding.
+
+    Without this, a password file written by Windows PowerShell 5.1 fails as an
+    I/O error and one saved by Notepad as "UTF-8 with BOM" fails as *wrong
+    password* -- which sends the user hunting for a typo that does not exist.
+    """
+    path = tmp_path / f"{label}.txt"
+    path.write_bytes(raw)
+    with Secret.from_file(path) as secret, secret.expose() as text:
+        assert text == "héllo wörld"
+
+
+def test_a_byte_order_mark_on_a_pipe_is_handled_the_same_way() -> None:
+    read_end, write_end = os.pipe()
+    os.write(write_end, b"\xef\xbb\xbfh\xc3\xa9llo\r\n")
+    os.close(write_end)
+    try:
+        with Secret.from_fd(read_end) as secret, secret.expose() as text:
+            assert text == "héllo"
+    finally:
+        os.close(read_end)
+
+
+def test_a_password_that_merely_contains_bom_like_bytes_mid_way_is_untouched(tmp_path) -> None:
+    path = tmp_path / "pw.txt"
+    path.write_bytes("pass﻿word".encode())
+    with Secret.from_file(path) as secret, secret.expose() as text:
+        assert text == "pass﻿word"

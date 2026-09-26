@@ -108,10 +108,12 @@ class Secret:
             # at the CLI layer instead of silently accepting it.
             pass
         raw = bytearray(p.read_bytes())
+        decoded = _from_editor_encoding(raw)
         try:
-            return cls(_strip_one_newline(raw))
+            return cls(_strip_one_newline(decoded))
         finally:
             _wipe(raw)
+            _wipe(decoded)
 
     @classmethod
     def from_fd(cls, fd: int) -> Secret:
@@ -130,9 +132,11 @@ class Secret:
         if len(chunks) > MAX_PASSWORD_BYTES:
             _wipe(chunks)
             raise SecretError(f"Password on fd {fd} exceeds {MAX_PASSWORD_BYTES} bytes.")
+        decoded = _from_editor_encoding(chunks)
         try:
-            return cls(_strip_one_newline(chunks))
+            return cls(_strip_one_newline(decoded))
         finally:
+            _wipe(decoded)
             _wipe(chunks)
 
     # ------------------------------------------------------------- lifecycle
@@ -215,6 +219,37 @@ class Secret:
 
     def __hash__(self) -> int:
         return id(self)
+
+
+def _from_editor_encoding(buf: bytearray) -> bytearray:
+    """Undo the encoding an editor or shell chose, when it announced one.
+
+    Passwords are handled as UTF-8. Windows tools frequently prefix a file with
+    a byte-order mark instead: Windows PowerShell 5.1 writes UTF-16LE for
+    ``"secret" > pw.txt``, and Notepad offers "UTF-8 with BOM". Read literally,
+    the first becomes an undecodable password and the second a password that
+    starts with an invisible character -- so the user is told their correct
+    password is wrong.
+
+    Only a mark at the very start counts; U+FEFF anywhere else is left alone.
+    Always returns a new buffer, so the caller can wipe both.
+    """
+    if buf.startswith(b"\xef\xbb\xbf"):
+        return bytearray(buf[3:])
+    for mark, codec in ((b"\xff\xfe", "utf-16-le"), (b"\xfe\xff", "utf-16-be")):
+        if buf.startswith(mark):
+            try:
+                # The decoded str cannot be wiped; that is true of every
+                # password that is ever exposed as text, and is documented in
+                # docs/security/security-design.md.
+                text = bytes(buf[2:]).decode(codec)
+            except UnicodeDecodeError as exc:
+                raise SecretError(
+                    f"The password starts with a {codec.upper()} byte-order mark but is not "
+                    "valid text in that encoding."
+                ) from exc
+            return bytearray(text.encode("utf-8"))
+    return bytearray(buf)
 
 
 def _strip_one_newline(buf: bytearray) -> bytes:

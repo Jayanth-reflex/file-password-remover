@@ -162,6 +162,15 @@ class PdfAdapter(Adapter):
 
         try:
             with pikepdf.open(path) as pdf:
+                if not pdf.is_encrypted and not _pages_are_readable(pdf):
+                    # "Not protected -- use the file as it is" would send the
+                    # user away with a file that cannot be read.
+                    raise CorruptFileError(
+                        "This PDF is damaged: its pages cannot be read. A download of an "
+                        "encrypted PDF that was cut short looks exactly like this, because the "
+                        "part that says it is encrypted is near the end of the file.",
+                        remediation="Re-download or re-copy the file, then try again.",
+                    )
                 if not pdf.is_encrypted:
                     return Detection(
                         path=path,
@@ -459,17 +468,37 @@ def _restriction_policy_error(*, owner_known: bool) -> Exception:
     )
 
 
+def _sample(count: int) -> tuple[range, str]:
+    """Which pages to read, and how to describe that choice.
+
+    Every page up to ``VERIFY_PAGE_CAP``, and an even spread beyond it, so the
+    cost of a check stays bounded on a thousand-page document.
+    """
+    if count <= VERIFY_PAGE_CAP:
+        return range(count), f"all {count} page(s)"
+    step = max(1, count // VERIFY_PAGE_CAP)
+    indices = range(0, count, step)
+    return indices, f"{len(indices)} of {count} page(s), every {step}"
+
+
+def _pages_are_readable(pdf: Any) -> bool:
+    """Whether the sampled pages' content streams decode.
+
+    qpdf repairs a damaged cross-reference table by scanning for objects, which
+    is usually a kindness. It is not one when the part that was cut off held the
+    /Encrypt dictionary: the rebuilt document then looks unencrypted while its
+    streams are still ciphertext, and no longer decode.
+    """
+    pages = list(pdf.pages)
+    indices, _ = _sample(len(pages))
+    return all(page_content_bytes(pages[i]) != b"<unreadable>" for i in indices)
+
+
 def _capture_expectations(pdf: Any) -> dict[str, str]:
     """Cheap, content-sensitive invariants used to prove the output is intact."""
     pages = list(pdf.pages)
     count = len(pages)
-    if count <= VERIFY_PAGE_CAP:
-        indices = range(count)
-        scope = f"all {count} page(s)"
-    else:
-        step = max(1, count // VERIFY_PAGE_CAP)
-        indices = range(0, count, step)
-        scope = f"{len(range(0, count, step))} of {count} page(s), every {step}"
+    indices, scope = _sample(count)
 
     digest = hashlib.sha256()
     for i in indices:

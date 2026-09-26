@@ -79,6 +79,7 @@ Every promise in the README has something you can run or read.
 </td><td>
 
 - [CLI reference](ops/cli.md)
+- [End-to-end tests](ops/e2e.md) — every surface, terminal and shell
 - [Install](ops/install.md) · [Uninstall](ops/uninstall.md)
 - [Build](ops/build.md)
 - [Release process](ops/release.md)

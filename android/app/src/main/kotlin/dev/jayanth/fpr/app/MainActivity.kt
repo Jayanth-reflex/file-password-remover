@@ -56,6 +56,7 @@ fun DocumentScreen(model: RemovalViewModel = viewModel()) {
     val stage by model.stage.collectAsState()
     val fileName by model.fileName.collectAsState()
     val password by model.password.collectAsState()
+    val confirmation by model.confirmation.collectAsState()
     val verification by model.verification.collectAsState()
     var generatePassword by remember { mutableStateOf(true) }
 
@@ -126,6 +127,7 @@ fun DocumentScreen(model: RemovalViewModel = viewModel()) {
                     RemovalViewModel.Action.PROTECT -> ProtectControls(
                         model = model,
                         password = password,
+                        confirmation = confirmation,
                         generatePassword = generatePassword,
                         onGenerateChanged = { generatePassword = it },
                     )
@@ -229,6 +231,7 @@ private fun RemoveControls(model: RemovalViewModel, password: String) {
 private fun ProtectControls(
     model: RemovalViewModel,
     password: String,
+    confirmation: String,
     generatePassword: Boolean,
     onGenerateChanged: (Boolean) -> Unit,
 ) {
@@ -264,11 +267,29 @@ private fun ProtectControls(
                 label = "Password to set",
                 tag = "new-password-field",
             )
+            // Typed twice: behind a mask, one wrong key would lock the file
+            // with a password nobody knows, and it cannot be recovered.
+            PasswordField(
+                value = confirmation,
+                onValueChange = model::setConfirmation,
+                label = "Type it again",
+                tag = "confirm-password-field",
+            )
+            if (confirmation.isNotEmpty() && confirmation != password) {
+                Text(
+                    "The two passwords do not match.",
+                    color = palette.oxide,
+                    fontSize = 13.sp,
+                    modifier = Modifier.testTag("password-mismatch"),
+                )
+            }
         }
 
         PrimaryButton(
             "Protect this file",
-            enabled = generatePassword || password.isNotEmpty(),
+            // Computed from the collected state so it recomposes as either
+            // field changes; the view model re-checks before acting.
+            enabled = generatePassword || (password.isNotEmpty() && password == confirmation),
             tag = "protect-button",
         ) { model.protectFile(generatePassword) }
     }

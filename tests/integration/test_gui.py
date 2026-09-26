@@ -8,53 +8,16 @@ keyboard cannot reach. They are skipped where no display is available.
 from __future__ import annotations
 
 import re
-import time
 from pathlib import Path
 
 import pytest
 
+# `tk_root` and `app` live in tests/conftest.py: there can be only one Tk root
+# per process, and the end-to-end desktop journeys share it.
+from ..gui_support import settle as _settle
+
 tk = pytest.importorskip("tkinter")
 pytestmark = pytest.mark.gui
-
-
-@pytest.fixture(scope="session")
-def tk_root():
-    """One Tk root for the whole session.
-
-    Creating and destroying several Tk roots inside one process hangs on macOS,
-    so the window is built once and its contents are rebuilt per test.
-    """
-    try:
-        root = tk.Tk()
-    except tk.TclError as exc:  # pragma: no cover - headless CI
-        pytest.skip(f"no display: {exc}")
-    root.withdraw()
-    yield root
-    root.destroy()
-
-
-@pytest.fixture
-def app(tk_root):
-    from fpr_gui.app import App
-
-    for child in tk_root.winfo_children():
-        child.destroy()
-    instance = App(tk_root)
-    yield instance
-    instance.stop()
-    for child in tk_root.winfo_children():
-        child.destroy()
-
-
-def _settle(app, timeout: float = 20.0) -> None:
-    """Pump the Tk event loop until the worker thread's result is applied."""
-    deadline = time.monotonic() + timeout
-    while time.monotonic() < deadline:
-        app.root.update()
-        if not app.busy:
-            return
-        time.sleep(0.02)
-    raise AssertionError("the worker never finished")
 
 
 def _detail(app) -> str:
@@ -301,9 +264,11 @@ def test_a_password_the_user_chose_is_not_echoed(app, pdf_plain: Path) -> None:
     _settle(app)
     app.generate_var.set(False)
     app.password_var.set("a-password-i-chose")
+    app.confirm_var.set("a-password-i-chose")
 
     app.on_run()
     _settle(app)
 
+    assert (pdf_plain.parent / "plain-protected.pdf").exists()
     assert app.generated_label.cget("text") == ""
     assert "a-password-i-chose" not in app.status.cget("text")
