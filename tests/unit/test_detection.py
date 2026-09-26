@@ -9,7 +9,10 @@ import pytest
 from fpr import inspect
 from fpr.errors import CorruptFileError, UnsupportedFormatError
 from fpr.registry import adapter_for
+from fpr.testing import fixtures as F
 from fpr.types import FormatId, Protection, Removability
+
+from ..conftest import OWNER_PASSWORD, SAMPLE_PASSWORD
 
 
 def test_pdf_encrypted_is_reported_without_a_password(pdf_encrypted: Path) -> None:
@@ -114,3 +117,41 @@ def test_unknown_bytes_report_their_signature(write) -> None:
     with pytest.raises(UnsupportedFormatError) as exc:
         inspect(path)
     assert "de ad be ef" in exc.value.message
+
+
+def test_a_reconstructable_truncated_encrypted_pdf_is_corrupt_not_unprotected(write) -> None:
+    """An interrupted download of an encrypted PDF.
+
+    Truncation cuts off the trailer that points at the /Encrypt dictionary,
+    qpdf rebuilds the cross-reference table from what is left, and the rebuilt
+    document looks unencrypted -- while every content stream in it is still
+    ciphertext. Reporting "not protected, use the file as it is" sends the user
+    off with a file that cannot be read.
+    """
+    encrypted = F.make_pdf(F.PdfSpec(user=SAMPLE_PASSWORD, owner=OWNER_PASSWORD))
+    path = write("interrupted.pdf", F.truncate(encrypted, keep=0.6))
+    with pytest.raises(CorruptFileError) as exc:
+        inspect(path)
+    assert "encrypted" in exc.value.message.lower()
+
+
+def test_a_standard_encoding_font_is_not_mistaken_for_encryption(tmp_path: Path) -> None:
+    """`/StandardEncoding` contains `/Standard`, and is in a great many plain PDFs."""
+    import pikepdf
+
+    pdf = pikepdf.new()
+    pdf.add_blank_page()
+    pdf.pages[0].Resources = pikepdf.Dictionary(
+        Font=pikepdf.Dictionary(
+            F1=pikepdf.Dictionary(
+                Type=pikepdf.Name.Font,
+                Subtype=pikepdf.Name.Type1,
+                BaseFont=pikepdf.Name.Helvetica,
+                Encoding=pikepdf.Name.StandardEncoding,
+            )
+        )
+    )
+    path = tmp_path / "plain-standard-encoding.pdf"
+    pdf.save(path)
+    assert b"/StandardEncoding" in path.read_bytes()
+    assert inspect(path).protection is Protection.NONE
