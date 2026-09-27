@@ -4,7 +4,7 @@ All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project uses
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [1.1.0] — 2026-09-25
+## [1.1.0] — 2026-09-27
 
 Protection in both directions, on two more platforms, behind one visual
 identity.
