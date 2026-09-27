@@ -136,3 +136,45 @@ def test_a_wrong_password_that_ends_the_stream_early_is_a_wrong_password(tmp_pat
     with Secret.from_text(WRONG_PASSWORD) as pw, pytest.raises(IncorrectPasswordError):
         remove(archive, pw)
     assert not list(tmp_path.glob("*-unprotected*"))
+
+
+@pytest.mark.parametrize(
+    "chain",
+    ["bz2_bcj", "zstd", "zstd_bcj", "bz2", "deflate", "ppmd", "brotli", "lzma2_delta", "lzma_bcj"],
+)
+def test_the_guard_leaves_every_filter_chain_working(chain: str, tmp_path: Path) -> None:
+    """The guard leaves every filter chain py7zr can write working.
+
+    A fix proposed upstream for the same loop (miurahr/py7zr#538) was rejected
+    because it broke bzip2+BCJ and zstd archives on the py7zr of the day. On
+    py7zr 1.1.3 those chains -- and 53 real archives from py7zr's own test data
+    -- never return an empty result at all, so this cannot tell the two rules
+    apart today. It is here to catch a future guard, or a future py7zr, that
+    turns a working archive into a false "wrong password".
+    """
+    import io
+
+    import py7zr
+
+    import fpr.adapters.sevenzip  # noqa: F401 -- installs the guard
+
+    filters = {
+        "bz2_bcj": [{"id": py7zr.FILTER_X86}, {"id": py7zr.FILTER_BZIP2}],
+        "zstd": [{"id": py7zr.FILTER_ZSTD, "level": 3}],
+        "zstd_bcj": [{"id": py7zr.FILTER_X86}, {"id": py7zr.FILTER_ZSTD}],
+        "bz2": [{"id": py7zr.FILTER_BZIP2}],
+        "deflate": [{"id": py7zr.FILTER_DEFLATE}],
+        "ppmd": [{"id": py7zr.FILTER_PPMD}],
+        "brotli": [{"id": py7zr.FILTER_BROTLI}],
+        "lzma2_delta": [{"id": py7zr.FILTER_DELTA}, {"id": py7zr.FILTER_LZMA2}],
+        "lzma_bcj": [{"id": py7zr.FILTER_X86}, {"id": py7zr.FILTER_LZMA}],
+    }[chain]
+    members = {"a.bin": bytes(range(256)) * 4096, "b.txt": b"hello world\n" * 50000}
+    archive = tmp_path / f"{chain}.7z"
+    try:
+        with py7zr.SevenZipFile(archive, "w", filters=filters) as out:
+            for name, data in members.items():
+                out.writef(io.BytesIO(data), name)
+    except (ImportError, py7zr.UnsupportedCompressionMethodError) as exc:
+        pytest.skip(f"this py7zr install cannot write {chain}: {exc}")
+    assert _contents(archive, tmp_path) == members

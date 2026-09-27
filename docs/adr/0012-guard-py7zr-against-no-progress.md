@@ -61,9 +61,20 @@ If a second hang of unknown cause turns up in py7zr, this should be revisited,
 and isolation will probably be the right answer.
 
 **Wait for an upstream fix.** The loop should be fixed in py7zr; it is reported
-as [miurahr/py7zr#752](https://github.com/miurahr/py7zr/issues/752). But the hang affects users now, and an upstream release would
+as [miurahr/py7zr#752](https://github.com/miurahr/py7zr/issues/752), a
+duplicate of the older [#536](https://github.com/miurahr/py7zr/issues/536). But the hang affects users now, and an upstream release would
 also need a version floor on the optional extra. When one exists, the guard can
 be removed and the floor raised.
+
+**Stop after empty results alone.** The fix proposed upstream for the same
+loop, [miurahr/py7zr#538](https://github.com/miurahr/py7zr/pull/538) (for
+issue #536, which describes this loop from damaged archives), broke after two
+empty results. It was not merged because bzip2+BCJ and zstd tests failed. That
+is why this guard also requires the file position to stand still. On py7zr
+1.1.3, 53 real archives from py7zr's own test data made 473 decompressor calls
+and none returned empty, and those archives extract identically with and
+without this guard -- so the margin today is wide, and the position check is
+there for decoders and versions that behave otherwise.
 
 **Pre-check the password.** 7-Zip's AES coder has no password verifier; only
 decompressing tells a right key from a wrong one.
