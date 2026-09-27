@@ -14,18 +14,38 @@ set -euo pipefail
 cd "$(dirname "$0")/.."
 DEVICE="${1:-}"
 if [ -z "$DEVICE" ]; then
-  # Whatever iPhone this Xcode ships a runtime for: runner images change the
-  # set of simulators more often than this script changes.
+  # An iPhone on the runtime that matches the SDK the app is built with.
+  # Picking the newest installed runtime instead put an Xcode 16.4 build and
+  # its XCTest in front of an iOS 26 system document picker on CI, where taps on
+  # PDFs in the picker were dropped; the same tests pass when the two match.
+  SDK="$(xcrun --sdk iphonesimulator --show-sdk-version)"
   DEVICE="$(xcrun simctl list devices available -j | "${PYTHON:-python3}" -c '
 import json, sys
-for runtime, devices in sorted(json.load(sys.stdin)["devices"].items(), reverse=True):
-    if "iOS" not in runtime:
+
+sdk = tuple(int(part) for part in sys.argv[1].split("."))
+
+def version(runtime):
+    # com.apple.CoreSimulator.SimRuntime.iOS-18-5 -> (18, 5)
+    return tuple(int(part) for part in runtime.rsplit(".", 1)[-1].split("-")[1:])
+
+candidates = []
+for runtime, devices in json.load(sys.stdin)["devices"].items():
+    if ".iOS-" not in runtime:
         continue
     for device in devices:
         if device["name"].startswith("iPhone"):
-            print(device["udid"]); raise SystemExit
-raise SystemExit("no iPhone simulator is available")
-')"
+            candidates.append((version(runtime), device["udid"]))
+if not candidates:
+    raise SystemExit("no iPhone simulator is available")
+
+# The exact SDK version if there is one; otherwise the newest runtime that is
+# not newer than the SDK; otherwise, as a last resort, the oldest available.
+exact = [c for c in candidates if c[0][:2] == sdk[:2]]
+older = sorted(c for c in candidates if c[0] <= sdk)
+chosen = exact[0] if exact else (older[-1] if older else sorted(candidates)[0])
+print(chosen[1])
+' "$SDK")"
+  echo "==> iOS $SDK SDK; testing on simulator $DEVICE"
 fi
 DERIVED="${DERIVED_DATA:-build/ios-uitests}"
 PYTHON="${PYTHON:-python3}"
