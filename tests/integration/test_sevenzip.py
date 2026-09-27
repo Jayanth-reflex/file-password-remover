@@ -68,3 +68,71 @@ def test_licence_warning_is_surfaced(sevenzip: Path) -> None:
     with Secret.from_text(SAMPLE_PASSWORD) as pw:
         result = remove(sevenzip, pw)
     assert any("LGPL" in w for w in result.warnings)
+
+
+def test_a_wrong_password_that_stalls_the_decoder_fails_fast(tmp_path: Path) -> None:
+    """The archive that hung CI for five minutes, reproduced on purpose.
+
+    With this IV, WRONG_PASSWORD decrypts to bytes the LZMA decoder accepts
+    until the packed input is exhausted, and py7zr then loops forever waiting
+    for output that cannot come. Run in a child process with a deadline, so a
+    regression fails this test instead of hanging the suite.
+    """
+    import subprocess
+    import sys
+
+    from fpr.errors import ExitCode
+    from fpr.testing import fixtures as F
+
+    archive = tmp_path / "stalls.7z"
+    archive.write_bytes(F.make_sevenzip(iv=F.SEVENZIP_STALLING_IV))
+    try:
+        result = subprocess.run(
+            [sys.executable, "-m", "fpr.cli.main", "remove", str(archive), "--password-stdin"],
+            input=WRONG_PASSWORD,
+            capture_output=True,
+            text=True,
+            timeout=60,
+            check=False,
+        )
+    except subprocess.TimeoutExpired:
+        pytest.fail("a wrong password made 7-Zip extraction hang")
+    assert result.returncode == ExitCode.WRONG_PASSWORD, result.stderr
+    assert not list(tmp_path.glob("*-unprotected*"))
+
+
+def test_the_stalling_archive_still_opens_with_the_right_password(tmp_path: Path) -> None:
+    """The guard must not mistake a real archive for a stalled one."""
+    from fpr.testing import fixtures as F
+
+    archive = tmp_path / "stalls.7z"
+    archive.write_bytes(F.make_sevenzip(iv=F.SEVENZIP_STALLING_IV))
+    with Secret.from_text(SAMPLE_PASSWORD) as pw:
+        result = remove(archive, pw)
+    assert _contents(result.output, tmp_path) == _expected()
+
+
+def test_the_no_progress_guard_is_installed() -> None:
+    """A py7zr upgrade that moves the decompressor silently disables the guard.
+
+    The regression test above would then hang for its full deadline; this says
+    why, at once. See docs/adr/0012-guard-py7zr-against-no-progress.md.
+    """
+    import py7zr.compressor
+
+    import fpr.adapters.sevenzip  # noqa: F401 -- installs the guard
+
+    decompress = py7zr.compressor.SevenZipDecompressor.decompress
+    assert getattr(decompress, "_fpr_guarded", False), "py7zr's decompressor is not guarded"
+
+
+def test_a_wrong_password_that_ends_the_stream_early_is_a_wrong_password(tmp_path: Path) -> None:
+    """Not an I/O error: nothing is wrong with the disk, only with the key."""
+    from fpr.errors import IncorrectPasswordError
+    from fpr.testing import fixtures as F
+
+    archive = tmp_path / "early-eof.7z"
+    archive.write_bytes(F.make_sevenzip(iv=F.SEVENZIP_EARLY_EOF_IV))
+    with Secret.from_text(WRONG_PASSWORD) as pw, pytest.raises(IncorrectPasswordError):
+        remove(archive, pw)
+    assert not list(tmp_path.glob("*-unprotected*"))
