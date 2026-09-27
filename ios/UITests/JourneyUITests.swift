@@ -19,9 +19,12 @@ final class JourneyUITests: XCTestCase {
 
     // MARK: - Journeys
 
+    /// "locked" has no extension (see scripts/run_ios_ui_tests.sh), so this
+    /// also proves the app identifies a PDF by its content, not its name.
     func testRemovingProtectionFromAPDF() {
         choose("locked")
         XCTAssertTrue(app.staticTexts["user-password"].waitForExistence(timeout: 10))
+        XCTAssertTrue(app.staticTexts["PDF"].exists, "not identified as a PDF by content")
 
         type(password, into: app.secureTextFields["password-field"])
         tap(app.buttons["remove-button"])
@@ -116,7 +119,12 @@ final class JourneyUITests: XCTestCase {
     /// Password Remover", would otherwise match the name of its own folder.
     private func choose(_ name: String) {
         tap(app.buttons["choose-file"])
-        let file = pickerCell(identifierPrefix: "\(name), ")
+        // A cell is identified as "<name>, <type>" ("aes.zip, zip"), or just
+        // "<name>" when the file has no extension.
+        let named = NSPredicate(
+            format: "identifier == %@ OR identifier BEGINSWITH %@", name, "\(name), "
+        )
+        let file = app.cells.matching(named).firstMatch
         if !file.waitForExistence(timeout: 8) { openOwnFolder() }
         XCTAssertTrue(file.waitForExistence(timeout: 20), "\(name) is not in the picker")
 
@@ -124,9 +132,7 @@ final class JourneyUITests: XCTestCase {
         // tab that is not on screen keeps its cells -- and `firstMatch` may be
         // one of those. Tap whichever copy can actually be tapped, and retry if
         // a tap lands while the picker is still animating.
-        let copies = app.cells.matching(
-            NSPredicate(format: "identifier BEGINSWITH %@", "\(name), ")
-        )
+        let copies = app.cells.matching(named)
         let loaded = app.buttons["start-over"]
         var tapped = 0
         for _ in 1...3 {

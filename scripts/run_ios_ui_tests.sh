@@ -86,10 +86,16 @@ documents = Path(sys.argv[1])
 for stale in documents.iterdir():
     if stale.is_file():
         stale.unlink()
-(documents / "locked.pdf").write_bytes(
+# The PDFs are written without an extension. With one, the picker asks Quick
+# Look for a thumbnail before it hands the file over, and on a headless CI
+# runner that render stalls: the cell takes taps and never returns the file
+# (the ZIP, which only ever gets a generic icon, was unaffected). Without one
+# there is nothing to preview -- and the app has to recognise these as PDFs by
+# their content, which is how it identifies every file anyway.
+(documents / "locked").write_bytes(
     F.make_pdf(F.PdfSpec(user=F.SAMPLE_PASSWORD, owner=F.OWNER_PASSWORD))
 )
-(documents / "plain.pdf").write_bytes(F.make_pdf())
+(documents / "plain").write_bytes(F.make_pdf())
 (documents / "aes.zip").write_bytes(F.make_zip_aes())
 print("   seeded:", ", ".join(sorted(p.name for p in documents.iterdir())))
 PYEOF
