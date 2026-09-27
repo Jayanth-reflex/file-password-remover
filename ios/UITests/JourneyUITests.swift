@@ -110,32 +110,44 @@ final class JourneyUITests: XCTestCase {
 
     /// Pick a file from the app's own folder in the system document picker.
     ///
-    /// The picker remembers where it was last; on a fresh simulator it opens
-    /// on Recents or the Browse root instead, so fall back to navigating there.
+    /// The picker reopens wherever it was last left, which on a fresh
+    /// simulator is Recents. Everything here is matched against the picker's
+    /// own cells -- never static text -- because the app's title, "File
+    /// Password Remover", would otherwise match the name of its own folder.
     private func choose(_ name: String) {
         tap(app.buttons["choose-file"])
-        // The picker's cells are what select a file; the name label inside a
-        // cell does not respond to a tap. A cell is identified as
-        // "<name>, <type>", e.g. "locked, pdf" or "aes.zip, zip".
-        let file = app.cells
-            .matching(NSPredicate(format: "identifier BEGINSWITH %@", "\(name), "))
-            .firstMatch
-        if !file.waitForExistence(timeout: 5) {
-            let browse = app.buttons["Browse"]
-            if browse.waitForExistence(timeout: 5) { browse.tap() }
-            for location in ["On My iPhone", "On My iPad"] where app.staticTexts[location].exists {
-                app.staticTexts[location].tap()
-                break
-            }
-            for folder in ["Password Remover", "File Password Remover", "FilePasswordRemover"]
-            where app.staticTexts[folder].waitForExistence(timeout: 3) {
-                app.staticTexts[folder].tap()
-                break
-            }
+        let file = pickerCell(identifierPrefix: "\(name), ")
+        if !file.waitForExistence(timeout: 8) { openOwnFolder() }
+        XCTAssertTrue(file.waitForExistence(timeout: 20), "\(name) is not in the picker")
+
+        // On a slow runner a tap can land while the picker is still animating
+        // and be dropped; if nothing loaded, and the cell is still there, try
+        // again rather than wait out a timeout.
+        let loaded = app.buttons["start-over"]
+        for _ in 1...3 {
+            if file.exists && file.isHittable { file.tap() }
+            if loaded.waitForExistence(timeout: 20) { return }
         }
-        XCTAssertTrue(file.waitForExistence(timeout: 10), "\(name) is not in the picker")
-        file.tap()
-        XCTAssertTrue(app.buttons["start-over"].waitForExistence(timeout: 15), "\(name) did not load")
+        XCTFail("\(name) did not load")
+    }
+
+    private func pickerCell(identifierPrefix prefix: String) -> XCUIElement {
+        app.cells.matching(NSPredicate(format: "identifier BEGINSWITH %@", prefix)).firstMatch
+    }
+
+    /// Browse -> On My iPhone (or iPad) -> this app's folder.
+    private func openOwnFolder() {
+        let browse = app.buttons["Browse"]
+        if browse.waitForExistence(timeout: 10) { browse.tap() }
+
+        let onDevice = pickerCell(identifierPrefix: "DOC.sidebar.item.On My")
+        if onDevice.waitForExistence(timeout: 15) { onDevice.tap() }
+
+        // The app has no cells of its own, so this can only be the folder.
+        let folder = app.cells
+            .matching(NSPredicate(format: "label CONTAINS %@", "Password Remover"))
+            .firstMatch
+        if folder.waitForExistence(timeout: 15) { folder.tap() }
     }
 
     private func type(_ text: String, into field: XCUIElement) {
