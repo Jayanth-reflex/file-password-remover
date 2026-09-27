@@ -22,6 +22,14 @@ updates:
     labels: ["dependencies", "ci"]
     commit-message:
       prefix: "chore(ci)"
+    ignore:
+      # gradle/actions v6 moved its caching into a proprietary component, and
+      # upgrading to it accepts Gradle's Terms of Use for that component. v5 is
+      # the last major under MIT alone. Minor and patch releases of v5 still
+      # arrive; a new major is a licensing decision, taken deliberately rather
+      # than in a weekly bot PR.
+      - dependency-name: "gradle/actions"
+        update-types: ["version-update:semver-major"]
 
   - package-ecosystem: docker
     directory: "/"
