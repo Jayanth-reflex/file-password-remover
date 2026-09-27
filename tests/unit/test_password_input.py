@@ -168,3 +168,35 @@ def test_a_posix_tty_is_interactive(monkeypatch) -> None:
 def test_detached_stdin_is_not_interactive(monkeypatch) -> None:
     monkeypatch.setattr(sys, "stdin", None)
     assert password_input.stdin_is_interactive() is False
+
+
+# ------------------------------------------------------------------ Windows
+def test_a_numbered_descriptor_is_refused_on_windows(monkeypatch) -> None:
+    """Windows gives a native program only stdin, stdout and stderr.
+
+    A shell such as Git Bash will happily accept `--password-fd 3 3<pw.txt`,
+    but descriptor 3 does not reach the program -- and if the process has some
+    other descriptor 3 of its own, that is what would be read as the password.
+    Refuse, and say what works instead.
+    """
+    monkeypatch.setattr(password_input, "_is_windows", lambda: True)
+    with pytest.raises(UsageError) as exc:
+        resolve_secret(_args(password_fd=3))
+    assert "--password-stdin" in (exc.value.remediation or "") + exc.value.message
+
+
+def test_descriptor_zero_is_still_accepted_on_windows(monkeypatch) -> None:
+    """`--password-fd 0` is stdin, which Windows does pass along."""
+    monkeypatch.setattr(password_input, "_is_windows", lambda: True)
+    read_end, write_end = os.pipe()
+    os.write(write_end, b"from stdin")
+    os.close(write_end)
+    saved = os.dup(0)
+    os.dup2(read_end, 0)
+    try:
+        with resolve_secret(_args(password_fd=0)) as secret, secret.expose() as text:
+            assert text == "from stdin"
+    finally:
+        os.dup2(saved, 0)
+        os.close(saved)
+        os.close(read_end)

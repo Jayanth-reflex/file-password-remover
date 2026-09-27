@@ -118,7 +118,7 @@ Pick one. With none of these, the tool prompts on the terminal.
 
 | Option | Exposure | Use when |
 | --- | --- | --- |
-| `--password-fd N` | none | scripting — the parent writes into a pipe |
+| `--password-fd N` | none | scripting — the parent writes into a pipe. On Windows only `0` works, because a program is given stdin, stdout and stderr and nothing else; a higher number is refused |
 | `--password-stdin` | none | shell pipelines |
 | `--password-file PATH` | a file on disk (warns if group/world readable) | the password already lives in a protected file |
 | *(nothing)* | none | interactive use |

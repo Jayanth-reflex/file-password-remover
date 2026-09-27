@@ -40,9 +40,23 @@ step 'remove with the password in a file'
 "$FPR" remove locked.pdf --password-file pw.txt >/dev/null || fail 'remove --password-file'
 [ -f locked-unprotected.pdf ] || fail 'no output from --password-file'
 
-step 'remove with the password on descriptor 3'
-"$FPR" remove locked.pdf --password-fd 3 -o via-fd.pdf 3<pw.txt >/dev/null || fail 'remove --password-fd'
-[ -f via-fd.pdf ] || fail 'no output from --password-fd'
+case "$(uname -s)" in
+    MINGW*|MSYS*|CYGWIN*)
+        # Git Bash accepts the redirect, but Windows passes a native program
+        # only stdin, stdout and stderr. The tool must refuse, not read some
+        # other descriptor 3 as the password.
+        step 'descriptor 3 is refused on Windows, with a way forward'
+        code=$("$FPR" remove locked.pdf --password-fd 3 -o via-fd.pdf 3<pw.txt >/dev/null 2>fd.err; echo $?)
+        [ "$code" = 2 ] || fail "--password-fd 3 exited $code on Windows, expected 2"
+        grep -q -- '--password-stdin' fd.err || fail 'the refusal does not say what to use instead'
+        [ ! -f via-fd.pdf ] || fail 'an output was written from descriptor 3'
+        ;;
+    *)
+        step 'remove with the password on descriptor 3'
+        "$FPR" remove locked.pdf --password-fd 3 -o via-fd.pdf 3<pw.txt >/dev/null || fail 'remove --password-fd'
+        [ -f via-fd.pdf ] || fail 'no output from --password-fd'
+        ;;
+esac
 
 step 'remove with the password piped on stdin'
 printf '%s' "$PW" | "$FPR" remove archive.zip --password-stdin >/dev/null || fail 'remove --password-stdin'

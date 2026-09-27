@@ -38,13 +38,15 @@ def _usable(shell: str) -> str | None:
 
     On Windows, System32\\bash.exe is the WSL launcher rather than a shell, and
     it can sit ahead of Git Bash on PATH -- so every PATH entry is checked
-    instead of trusting the first hit.
+    instead of trusting the first hit. Only the POSIX shells are filtered that
+    way: Windows PowerShell 5.1 genuinely lives under System32.
     """
+    wsl_launcher = WINDOWS and shell in {"bash", "sh"}
     for directory in os.environ.get("PATH", "").split(os.pathsep):
         if not directory:
             continue
         found = shutil.which(shell, path=directory)
-        if found and not (WINDOWS and "system32" in found.lower()):
+        if found and not (wsl_launcher and "system32" in found.lower()):
             return found
     return None
 
