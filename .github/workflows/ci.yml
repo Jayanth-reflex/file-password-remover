@@ -95,7 +95,7 @@ jobs:
           FPR_E2E_SHELLS: ${{ runner.os == 'Windows' && 'bash,pwsh,powershell,cmd' || 'sh,dash,bash,zsh,pwsh' }}
       - name: Upload coverage
         if: matrix.os == 'ubuntu-latest' && matrix.python == '3.12'
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: coverage
           path: coverage.xml
@@ -152,7 +152,7 @@ jobs:
         run: twine check dist/*
       - name: install into a clean environment and run it
         run: bash scripts/verify_install.sh
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: dist
           path: dist/*

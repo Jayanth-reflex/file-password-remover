@@ -30,7 +30,7 @@ jobs:
       - name: machine-readable report
         if: always()
         run: bandit -q -c pyproject.toml -r src -f json -o bandit.json || true
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         if: always()
         with:
           name: bandit
@@ -57,7 +57,7 @@ jobs:
         run: pip-audit --progress-spinner off --skip-editable
       - name: OSV query and licence evidence
         run: python scripts/audit_dependencies.py
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         if: always()
         with:
           name: dependency-evidence
