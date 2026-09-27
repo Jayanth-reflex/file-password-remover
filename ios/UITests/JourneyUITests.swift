@@ -120,15 +120,23 @@ final class JourneyUITests: XCTestCase {
         if !file.waitForExistence(timeout: 8) { openOwnFolder() }
         XCTAssertTrue(file.waitForExistence(timeout: 20), "\(name) is not in the picker")
 
-        // On a slow runner a tap can land while the picker is still animating
-        // and be dropped; if nothing loaded, and the cell is still there, try
-        // again rather than wait out a timeout.
+        // The same file can appear more than once in the picker's tree -- a
+        // tab that is not on screen keeps its cells -- and `firstMatch` may be
+        // one of those. Tap whichever copy can actually be tapped, and retry if
+        // a tap lands while the picker is still animating.
+        let copies = app.cells.matching(
+            NSPredicate(format: "identifier BEGINSWITH %@", "\(name), ")
+        )
         let loaded = app.buttons["start-over"]
+        var tapped = 0
         for _ in 1...3 {
-            if file.exists && file.isHittable { file.tap() }
+            if let target = copies.allElementsBoundByIndex.first(where: { $0.isHittable }) {
+                target.tap()
+                tapped += 1
+            }
             if loaded.waitForExistence(timeout: 20) { return }
         }
-        XCTFail("\(name) did not load")
+        XCTFail("\(name) did not load (\(copies.count) cell(s) in the picker, tapped \(tapped) time(s))")
     }
 
     private func pickerCell(identifierPrefix prefix: String) -> XCUIElement {
