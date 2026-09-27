@@ -1,0 +1,6 @@
+# cmd.exe mis-parses labels in batch files with LF-only line endings.
+*.cmd text eol=crlf
+*.bat text eol=crlf
+# A shell script checked out with CRLF fails in dash (and is fragile in bash):
+# the carriage return becomes part of every command.
+*.sh text eol=lf

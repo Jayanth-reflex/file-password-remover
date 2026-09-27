@@ -34,10 +34,37 @@ identity.
   desktop window and both apps, with a maker's-mark icon.
 
 **Project**
-- An end-to-end suite that drives the installed executable as a subprocess
-  through complete journeys, run on Linux, macOS and Windows in CI.
+- End-to-end tests on every surface: the installed CLI through every feature
+  and format; a pseudo-terminal and a real Windows console; one journey each in
+  sh, dash, bash, zsh, PowerShell 7, Windows PowerShell 5.1 and cmd.exe; the
+  desktop window; the iOS app through the system document picker (XCUITest);
+  and the Android app on an emulator (Compose). See
+  [docs/ops/e2e.md](docs/ops/e2e.md).
 - A version-consistency test: one number, declared in every platform's own file
   format, checked in one place.
+
+### Fixed
+
+Found by the end-to-end suite; none was visible to a test that runs one thing at
+a time.
+
+- **A generated password could be lost.** On a console that cannot encode a
+  file name -- any redirected output on Windows -- `protect --generate` wrote the
+  encrypted file and then crashed printing its name, before the password line.
+  Output now degrades instead of raising, and a failure in the report prints the
+  password to stderr first. `remove` no longer reports a crash after writing a
+  verified file either.
+- **A chosen password is now typed twice in every app.** The desktop, iOS and
+  Android apps took one masked field, so a single wrong key locked the file for
+  good. The CLI always asked twice.
+- **Password files written by Windows tools are read correctly.** A
+  byte-order mark -- PowerShell 5.1's UTF-16 `>` redirection, Notepad's UTF-8
+  with BOM -- was read as part of the password, failing as an I/O error or as a
+  wrong password.
+- **An interrupted download of an encrypted PDF is reported as damaged,** not as
+  "not protected -- use the file as it is".
+- **`--suffix -open` is accepted as written.** argparse read a dash-leading
+  suffix as a flag, and the default suffix starts with a dash.
 
 ### Known limitations
 

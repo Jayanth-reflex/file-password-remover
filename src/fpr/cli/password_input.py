@@ -34,6 +34,11 @@ from ..secret import Secret, SecretError
 __all__ = ["resolve_secret", "add_password_arguments", "PasswordSource", "stdin_is_interactive"]
 
 
+def _is_windows() -> bool:
+    """A function rather than a ``sys.platform`` test, so mypy checks both branches."""
+    return sys.platform.startswith("win")
+
+
 class PasswordSource:
     FD = "fd"
     FILE = "file"
@@ -108,7 +113,18 @@ def resolve_secret(
             return _from_prompt(prompt, confirm=confirm)
         source = chosen[0]
         if source == PasswordSource.FD:
-            return Secret.from_fd(int(args.password_fd))
+            descriptor = int(args.password_fd)
+            if descriptor > 2 and _is_windows():
+                # Windows hands a native program stdin, stdout and stderr and
+                # nothing else. A shell such as Git Bash accepts `3<pw.txt`, but
+                # descriptor 3 never arrives -- and any descriptor 3 this
+                # process happens to have would be read as the password.
+                raise UsageError(
+                    f"--password-fd {descriptor} cannot work on Windows: only stdin, stdout "
+                    "and stderr are passed to a program there.",
+                    remediation="Use --password-stdin (or --password-fd 0), or --password-file.",
+                )
+            return Secret.from_fd(descriptor)
         if source == PasswordSource.FILE:
             path = Path(args.password_file)
             _warn_if_readable(path)

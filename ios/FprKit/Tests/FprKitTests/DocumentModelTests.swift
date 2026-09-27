@@ -150,6 +150,7 @@ final class ProtectModelTests: XCTestCase {
         let model = DocumentModel()
         model.load(try corpus.url("zip-plain"))
         model.password = "a-password-i-chose"
+        model.confirmation = "a-password-i-chose"
 
         model.protectFile(generatePassword: false)
         try await waitForStage(model) { if case .protected = $0 { return true }; return false }
@@ -159,6 +160,43 @@ final class ProtectModelTests: XCTestCase {
         }
         XCTAssertNil(generated, "a password the user chose is theirs; it must not be echoed")
         XCTAssertTrue(model.password.isEmpty, "the password was retained after use")
+        XCTAssertTrue(model.confirmation.isEmpty, "the confirmation was retained after use")
+    }
+
+    /// Behind a mask, one wrong key locks the file with a password nobody
+    /// knows -- and this tool will not crack it back open. The CLI asks twice
+    /// for that reason; so does the app.
+    func testAMismatchedConfirmationWritesNothing() async throws {
+        let corpus = try VectorCorpus.load()
+        let model = DocumentModel()
+        model.load(try corpus.url("zip-plain"))
+        model.password = "a-password-i-chose"
+        model.confirmation = "a-password-i-chsoe"
+
+        XCTAssertFalse(model.canProtect(generatePassword: false))
+        model.protectFile(generatePassword: false)
+        try await Task.sleep(nanoseconds: 300_000_000)
+
+        guard case .inspected = model.stage else {
+            return XCTFail("a mismatched password was acted on: \(model.stage)")
+        }
+    }
+
+    func testAnEmptyChosenPasswordCannotProtect() throws {
+        let corpus = try VectorCorpus.load()
+        let model = DocumentModel()
+        model.load(try corpus.url("zip-plain"))
+        XCTAssertFalse(model.canProtect(generatePassword: false))
+        XCTAssertTrue(model.canProtect(generatePassword: true))
+    }
+
+    func testLoadingAnotherFileClearsTheConfirmation() throws {
+        let corpus = try VectorCorpus.load()
+        let model = DocumentModel()
+        model.load(try corpus.url("zip-plain"))
+        model.confirmation = "left over"
+        model.load(try corpus.url("pdf-plain"))
+        XCTAssertTrue(model.confirmation.isEmpty)
     }
 
     func testAFormatThatCannotBeProtectedDoesNotOfferIt() throws {

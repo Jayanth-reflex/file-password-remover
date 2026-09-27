@@ -115,3 +115,40 @@ def test_generate_cannot_be_combined_with_a_supplied_password(
 def test_protecting_many_files_at_once_is_refused(pdf_plain: Path, zip_plain: Path) -> None:
     """A batch of generated passwords is how people lose them."""
     assert main(["protect", str(pdf_plain), str(zip_plain), "--generate"]) == ExitCode.USAGE
+
+
+# ------------------------------------------------ the password must survive
+def test_a_generated_password_survives_a_failure_to_render_the_report(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
+    """Belt and braces for the one failure that cannot be undone.
+
+    By the time the report is rendered, the file is already encrypted. If
+    rendering then fails -- an encoding the console cannot represent, a closed
+    pipe, a bug in the renderer -- and the password was going to be printed at
+    the end of that report, the file is locked with a password nobody has seen.
+    Whatever goes wrong in the report, the password has to come out first.
+    """
+    from fpr import passwords
+    from fpr.cli import output
+    from fpr.secret import Secret
+    from fpr.testing import fixtures as F
+
+    known = "kw7m-t3pd-xrjc-4bs9-vgqy"
+    monkeypatch.setattr(passwords, "generate", lambda *_a, **_k: Secret.from_text(known))
+
+    def broken(*_args: object, **_kwargs: object) -> None:
+        raise OSError("the console went away")
+
+    monkeypatch.setattr(output.Renderer, "protected", broken)
+
+    source = tmp_path / "notes.pdf"
+    source.write_bytes(F.make_pdf())
+    code = main(["protect", str(source), "--generate"])
+
+    assert (tmp_path / "notes-protected.pdf").exists()
+    captured = capsys.readouterr()
+    assert known in captured.err, "the only copy of the password was lost"
+    assert "notes-protected.pdf" in captured.err
+    # 0 means a verified output exists, which is true; see _cmd_protect.
+    assert code == ExitCode.OK
