@@ -63,6 +63,12 @@ a time.
   wrong password.
 - **An interrupted download of an encrypted PDF is reported as damaged,** not as
   "not protected -- use the file as it is".
+- **A wrong 7-Zip password can no longer hang the tool.** About one wrong key
+  in 400 decrypted to data py7zr's decoder accepted until its input ran out,
+  after which py7zr looped forever. A guard now fails that state at once, and a
+  wrong key that ends the stream early is reported as a wrong password rather
+  than an I/O error. See
+  [ADR-0012](docs/adr/0012-guard-py7zr-against-no-progress.md).
 - **`--suffix -open` is accepted as written.** argparse read a dash-leading
   suffix as a flag, and the default suffix starts with a dash.
 

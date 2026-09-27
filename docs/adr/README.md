@@ -15,4 +15,6 @@ hard it would be to undo.
 | [0007](0007-no-password-on-argv.md) | Refuse passwords on the command line | Accepted |
 | [0008](0008-owner-restriction-policy.md) | Restriction removal requires the owner password and an explicit flag | Accepted |
 | [0009](0009-own-fixture-generators.md) | Generate protected fixtures ourselves, independently of the readers under test | Accepted |
-| [0010](0010-no-mobile-app-this-release.md) | Ship no mobile app rather than an unverified one | Accepted |
+| [0010](0010-no-mobile-app-this-release.md) | Ship no mobile app rather than an unverified one | Superseded by [0011](0011-ship-mobile-apps-verified-not-published.md) |
+| [0011](0011-ship-mobile-apps-verified-not-published.md) | Ship mobile apps built and verified here, not published to the stores | Accepted |
+| [0012](0012-guard-py7zr-against-no-progress.md) | Guard py7zr's decompressor against making no progress | Accepted |

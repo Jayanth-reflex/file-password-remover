@@ -11,11 +11,13 @@ Each builder returns the *bytes* of a file; the pytest fixtures in
 
 from __future__ import annotations
 
+import contextlib
 import io
 import warnings
 import zipfile
 from dataclasses import dataclass
 from typing import Literal
+from unittest import mock
 
 from .ooxml_agile import AgileParams, encrypt_agile
 from .zipcrypto import ZipEntry, build_zipcrypto_archive
@@ -288,15 +290,47 @@ def make_zip_mixed(password: str = SAMPLE_PASSWORD) -> bytes:
 
 
 # ---------------------------------------------------------------------- 7z
-def make_sevenzip(password: str = SAMPLE_PASSWORD, *, encrypt_header: bool = False) -> bytes:
+# An AES initialisation vector for which decrypting the fixture archive with
+# WRONG_PASSWORD yields ciphertext that py7zr's LZMA decoder accepts until the
+# packed input runs out -- after which py7zr 1.1.3 loops forever waiting for
+# output. Found by generating archives with IV = sha256("fpr-7z-stall-{n}")[:16]
+# for n = 0, 1, 2, ... and keeping the first that hung (n = 194); reproduced on
+# Python 3.10 and 3.13. About one random IV in 400 does this, which is why the
+# hang appeared once in CI and never on demand. See
+# docs/adr/0012-guard-py7zr-against-no-progress.md.
+SEVENZIP_STALLING_IV = bytes.fromhex("6c8c50e8bb8d9ea0296dbe3916714635")
+
+# The other rare outcome of a wrong password: the garbage decodes to an early
+# LZMA end-of-stream marker, and py7zr raises EOFError ("Already at end of
+# stream") on the next call. Found the same way, from "fpr-7z-eof-{n}" (n = 54).
+SEVENZIP_EARLY_EOF_IV = bytes.fromhex("6dd6201105fc1048141c3ad185de7d3f")
+
+
+def make_sevenzip(
+    password: str = SAMPLE_PASSWORD,
+    *,
+    encrypt_header: bool = False,
+    iv: bytes | None = None,
+) -> bytes:
+    """A 7-Zip archive of the fixture members, AES-256 encrypted.
+
+    py7zr draws a random IV for every archive. ``iv`` pins it, which makes the
+    ciphertext -- and so what a wrong password decrypts it to -- reproducible.
+    """
     import py7zr
+    import py7zr.compressor
 
     buf = io.BytesIO()
-    with py7zr.SevenZipFile(
-        buf, "w", password=password, header_encryption=encrypt_header
-    ) as archive:
-        for name, data in _ZIP_MEMBERS:
-            archive.writef(io.BytesIO(data), name)
+    with contextlib.ExitStack() as stack:
+        if iv is not None:
+            stack.enter_context(
+                mock.patch.object(py7zr.compressor, "get_random_bytes", lambda n: iv[:n])
+            )
+        with py7zr.SevenZipFile(
+            buf, "w", password=password, header_encryption=encrypt_header
+        ) as archive:
+            for name, data in _ZIP_MEMBERS:
+                archive.writef(io.BytesIO(data), name)
     return buf.getvalue()
 
 

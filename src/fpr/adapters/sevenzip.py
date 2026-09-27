@@ -29,10 +29,14 @@ names. Detection reports that instead of pretending the archive is empty.
 
 from __future__ import annotations
 
+import functools
 import hashlib
+import weakref
 from pathlib import Path, PurePosixPath
+from typing import Any
 
 import py7zr  # noqa: F401  -- import failure here is the availability signal
+import py7zr.compressor
 
 from ..errors import (
     CorruptFileError,
@@ -49,6 +53,62 @@ __all__ = ["SevenZipAdapter"]
 
 SEVENZIP_MAGIC = b"7z\xbc\xaf\x27\x1c"
 _CHUNK = 1 << 20
+
+
+class _NoProgressError(Exception):
+    """py7zr's decompressor can make no further progress (see below)."""
+
+
+# Consecutive calls that return nothing without reading anything. One could in
+# principle be a legitimate pause; several in a row cannot be.
+_STALL_LIMIT = 3
+
+
+def _guard_against_no_progress() -> None:
+    """Make py7zr fail instead of looping forever on a stalled stream.
+
+    py7zr 1.1.3 extracts with ``while out_remaining > 0: tmp =
+    decompressor.decompress(fp, ...)`` and never checks for progress. A wrong
+    AES key occasionally decrypts to bytes the LZMA decoder accepts without
+    complaint until the packed input is used up; from then on every call reads
+    nothing, returns nothing, and the loop spins for ever. That is how
+    `fpr remove` with a wrong password hung a CI job
+    (docs/adr/0012-guard-py7zr-against-no-progress.md).
+
+    The wrapper counts calls that neither produced output nor moved the
+    archive's file position -- judged by ``fp.tell()`` alone, not by py7zr's
+    private counters -- and raises after a few in a row. In any extraction that
+    can finish, every call does one or the other, so behaviour only changes in
+    the state that could only have hung. Installed once; idempotent.
+    """
+    cls = getattr(py7zr.compressor, "SevenZipDecompressor", None)
+    if cls is None or not hasattr(cls, "decompress"):
+        # A py7zr that restructured this has also changed the loop being
+        # guarded. Extraction still works; test_the_no_progress_guard_is_installed
+        # fails, which is the prompt to re-examine the ADR.
+        return
+    if getattr(cls.decompress, "_fpr_guarded", False):
+        return
+    original = cls.decompress
+    idle: weakref.WeakKeyDictionary[Any, int] = weakref.WeakKeyDictionary()
+
+    @functools.wraps(original)
+    def decompress(self: Any, fp: Any, max_length: int = -1) -> bytes:
+        before = fp.tell()
+        data: bytes = original(self, fp, max_length)
+        if data or fp.tell() != before:
+            idle[self] = 0
+            return data
+        idle[self] = idle.get(self, 0) + 1
+        if idle[self] >= _STALL_LIMIT:
+            raise _NoProgressError("the compressed stream ended before its declared size")
+        return data
+
+    decompress._fpr_guarded = True  # type: ignore[attr-defined]
+    cls.decompress = decompress
+
+
+_guard_against_no_progress()
 
 
 def _unsafe(name: str) -> bool:
@@ -138,7 +198,14 @@ class SevenZipAdapter(Adapter):
                         )
                     try:
                         archive.extractall(path=str(workdir))
-                    except (py7zr.PasswordRequired, py7zr.exceptions.CrcError) as exc:
+                    except (
+                        py7zr.PasswordRequired,
+                        py7zr.exceptions.CrcError,
+                        # A wrong key can decode to an early end-of-stream
+                        # marker; py7zr then raises EOFError on the next read.
+                        EOFError,
+                        _NoProgressError,
+                    ) as exc:
                         raise IncorrectPasswordError(
                             "The archive did not decrypt with this password.",
                             remediation="Re-check the password; if it is definitely right, the "
