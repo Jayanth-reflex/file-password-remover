@@ -37,6 +37,11 @@ def test_file_source(tmp_path: Path) -> None:
         assert value == "from-a-file"
 
 
+@pytest.mark.skipif(
+    sys.platform.startswith("win"),
+    reason="numbered descriptors are refused on Windows; "
+    "see test_a_numbered_descriptor_is_refused_on_windows",
+)
 def test_fd_source() -> None:
     read_fd, write_fd = os.pipe()
     os.write(write_fd, b"from-a-pipe")

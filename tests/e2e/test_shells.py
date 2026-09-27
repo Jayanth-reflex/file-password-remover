@@ -79,7 +79,10 @@ def _cmd() -> list[str] | None:
 
 SHELLS = {
     "sh": lambda: _posix("sh"),
-    "dash": lambda: _posix("dash"),
+    # Git for Windows ships dash.exe for its own use, and it cannot run a
+    # native C:\\...\\fpr.EXE path the way Git Bash can. Nobody runs tools from
+    # it there, so it is a POSIX-only row.
+    "dash": lambda: None if WINDOWS else _posix("dash"),
     "bash": lambda: _posix("bash"),
     "zsh": lambda: _posix("zsh"),
     "pwsh": lambda: _powershell("pwsh"),
