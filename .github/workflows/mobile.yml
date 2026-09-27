@@ -17,7 +17,7 @@ jobs:
   ios:
     name: iOS (Swift engine + app)
     runs-on: macos-15
-    timeout-minutes: 30
+    timeout-minutes: 45
     steps:
       - uses: actions/checkout@v7
 
@@ -59,6 +59,18 @@ jobs:
             -destination 'generic/platform=iOS Simulator' \
             -derivedDataPath build/ios-dd \
             build
+
+      # The app driven through the system document picker, the keyboard and
+      # its buttons: remove, protect, a wrong password then the right one, and
+      # a chosen password that must be typed twice.
+      - name: UI journeys on a simulator
+        run: bash scripts/run_ios_ui_tests.sh
+
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: ios-ui-test-results
+          path: build/ios-uitests/JourneyUITests.xcresult
 
       - uses: actions/upload-artifact@v4
         with:

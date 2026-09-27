@@ -61,6 +61,18 @@ class RemovalViewModel(application: Application) : AndroidViewModel(application)
         _password.value = value
     }
 
+    /**
+     * The chosen password, typed a second time. Only used when protecting with
+     * a password the user picks: behind a mask, one wrong key would lock the
+     * file with a password nobody knows.
+     */
+    private val _confirmation = MutableStateFlow("")
+    val confirmation: StateFlow<String> = _confirmation.asStateFlow()
+
+    fun setConfirmation(value: String) {
+        _confirmation.value = value
+    }
+
     private val _verification = MutableStateFlow<Map<String, String>>(emptyMap())
 
     /** Evidence from re-reading the file that was just written. */
@@ -77,14 +89,21 @@ class RemovalViewModel(application: Application) : AndroidViewModel(application)
         get() {
             val detection = (_stage.value as? Stage.Inspected)?.detection ?: return Action.NOTHING
             if (detection.removability == Removability.REMOVABLE) return Action.REMOVE
-            if (detection.protection == Protection.NONE && canProtect(detection.format)) {
+            if (detection.protection == Protection.NONE && canProtectFormat(detection.format)) {
                 return Action.PROTECT
             }
             return Action.NOTHING
         }
 
-    private fun canProtect(format: FormatId) =
+    private fun canProtectFormat(format: FormatId) =
         format == FormatId.PDF || format == FormatId.ZIP
+
+    /** Whether protecting now would use a password the user actually meant. */
+    fun canProtect(generatePassword: Boolean): Boolean {
+        if (available != Action.PROTECT) return false
+        if (generatePassword) return true
+        return _password.value.isNotEmpty() && _password.value == _confirmation.value
+    }
 
     /**
      * Protect the loaded file with the typed password, or a generated one.
@@ -94,10 +113,14 @@ class RemovalViewModel(application: Application) : AndroidViewModel(application)
      * shown. A password the user chose is not returned: it is already theirs.
      */
     fun protectFile(generatePassword: Boolean) {
+        // The button is disabled until the two fields match; this is the
+        // backstop, because the consequence of getting it wrong is permanent.
+        if (!canProtect(generatePassword)) return
         val data = source ?: return
         _stage.value = Stage.Working
         val chosen = if (generatePassword) PasswordGenerator.generate() else _password.value
         _password.value = ""
+        _confirmation.value = ""
 
         viewModelScope.launch {
             _stage.value = try {
@@ -127,6 +150,7 @@ class RemovalViewModel(application: Application) : AndroidViewModel(application)
     fun load(uri: Uri, displayName: String) {
         _stage.value = Stage.Empty
         _password.value = ""
+        _confirmation.value = ""
         // Evidence belongs to one run; it must never sit under a different file.
         _verification.value = emptyMap()
         viewModelScope.launch {
@@ -179,6 +203,7 @@ class RemovalViewModel(application: Application) : AndroidViewModel(application)
         source = null
         _fileName.value = ""
         _password.value = ""
+        _confirmation.value = ""
         _verification.value = emptyMap()
         _stage.value = Stage.Empty
     }

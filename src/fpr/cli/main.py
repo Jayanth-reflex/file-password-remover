@@ -12,6 +12,7 @@ docs/ops/cli.md. Anything other than 0 means nothing was written.
 from __future__ import annotations
 
 import argparse
+import contextlib
 import os
 import sys
 from pathlib import Path
@@ -196,9 +197,75 @@ def build_parser() -> argparse.ArgumentParser:
     return parser
 
 
+def _tolerate_unencodable_output() -> None:
+    """Never let printing a file name be the thing that fails.
+
+    A redirected stream on Windows is encoded in the ANSI code page, which
+    cannot represent most of the world's file names; so is any console whose
+    locale is narrower than the names on disk. Python's default for an
+    unencodable character is to raise, and by the time a result is printed the
+    output file already exists -- so a name the console cannot show would turn
+    a verified success into a crash, and for `protect --generate`, into a file
+    whose password was never displayed.
+
+    ``backslashreplace`` prints ``\\u62a5`` instead: ugly, unambiguous, and
+    still enough to identify the file.
+    """
+    for stream in (sys.stdout, sys.stderr):
+        reconfigure = getattr(stream, "reconfigure", None)
+        if reconfigure is None:
+            continue
+        try:
+            reconfigure(errors="backslashreplace")
+        except (ValueError, OSError):  # pragma: no cover - a detached stream
+            continue
+
+
+def _option_strings(parser: argparse.ArgumentParser) -> set[str]:
+    """Every flag the parser or any of its subcommands accepts."""
+    found = set(parser._option_string_actions)
+    for action in parser._actions:
+        if isinstance(action, argparse._SubParsersAction):
+            for sub in action.choices.values():
+                found |= _option_strings(sub)
+    return found
+
+
+def _attach_dash_values(argv: list[str], parser: argparse.ArgumentParser) -> list[str]:
+    """Let ``--suffix -open`` mean what it says.
+
+    The default suffix is ``-unprotected``, so a suffix starting with a dash is
+    the natural thing to type -- and argparse reads any dash-leading word as an
+    option, then reports the suffix as missing. Rewriting it as
+    ``--suffix=-open`` is what argparse itself recommends. A word that *is* one
+    of this tool's flags is left alone, so ``--suffix --overwrite`` is still
+    reported as a missing value rather than silently becoming a suffix.
+    """
+    flags = _option_strings(parser)
+    joined: list[str] = []
+    index = 0
+    while index < len(argv):
+        word = argv[index]
+        following = argv[index + 1] if index + 1 < len(argv) else None
+        if (
+            word == "--suffix"
+            and following is not None
+            and following.startswith("-")
+            and following.split("=", 1)[0] not in flags
+        ):
+            joined.append(f"--suffix={following}")
+            index += 2
+            continue
+        joined.append(word)
+        index += 1
+    return joined
+
+
 def main(argv: list[str] | None = None) -> int:
+    _tolerate_unencodable_output()
     parser = build_parser()
-    args = parser.parse_args(argv)
+    raw = list(sys.argv[1:] if argv is None else argv)
+    args = parser.parse_args(_attach_dash_values(raw, parser))
     configure(args.verbose)
     renderer = Renderer(as_json=args.json, quiet=args.quiet)
 
@@ -349,12 +416,33 @@ def _cmd_protect(args: argparse.Namespace, renderer: Renderer) -> int:
         written_to: Path | None = None
         if args.generate and args.password_out is not None:
             written_to = _write_password(args.password_out, secret)
-        renderer.protected(
-            result,
-            generated=secret if args.generate and written_to is None else None,
-            password_file=written_to,
-        )
+        shown = secret if args.generate and written_to is None else None
+        try:
+            renderer.protected(result, generated=shown, password_file=written_to)
+        except (Exception, KeyboardInterrupt):
+            # The file is already encrypted and verified. If the report fails
+            # before its last line, a generated password would never have been
+            # displayed, and the file could never be opened again. Whatever
+            # went wrong, the password comes out first.
+            _rescue(result.output, shown)
+            # Exit 0 is deliberate: the contract is that 0 means a verified
+            # output exists and anything else means nothing was written, and
+            # here the output does exist. The failure is reported on stderr.
+            return int(ExitCode.OK)
     return int(ExitCode.OK)
+
+
+def _rescue(output: Path, generated: Secret | None) -> None:
+    """Print what the user cannot afford to lose, as plainly as possible."""
+    lines = [f"The protected file was written to {output}, but the report could not be shown."]
+    if generated is not None:
+        with generated.expose() as text:
+            lines.append(f"PASSWORD: {text}")
+        lines.append("Save this now. It is shown once, and this tool cannot recover it.")
+    for line in lines:
+        # Nowhere left to write if even stderr has gone.
+        with contextlib.suppress(OSError, ValueError):
+            print(line, file=sys.stderr, flush=True)
 
 
 def _write_password(path: Path, secret: Secret) -> Path:

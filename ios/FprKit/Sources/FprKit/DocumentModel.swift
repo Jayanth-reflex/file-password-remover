@@ -32,6 +32,10 @@ public final class DocumentModel: ObservableObject {
     @Published public private(set) var stage: Stage = .empty
     @Published public private(set) var fileName: String = ""
     @Published public var password: String = ""
+    /// The chosen password, typed a second time. Only used when protecting
+    /// with a password the user picks: behind a mask, one wrong key would lock
+    /// the file with a password nobody knows.
+    @Published public var confirmation: String = ""
 
     /// Evidence from re-reading the file that was just written. Empty until
     /// something has actually been verified.
@@ -58,9 +62,17 @@ public final class DocumentModel: ObservableObject {
         format == .pdf || format == .zip
     }
 
+    /// Whether protecting now would use a password the user actually meant.
+    public func canProtect(generatePassword: Bool) -> Bool {
+        guard available == .protectIt else { return false }
+        if generatePassword { return true }
+        return !password.isEmpty && password == confirmation
+    }
+
     public func load(_ url: URL) {
         stage = .empty
         password = ""
+        confirmation = ""
         // Evidence belongs to one run; it must never sit under a different file.
         verification = [:]
         // Files handed over by the document picker are security-scoped.
@@ -85,10 +97,13 @@ public final class DocumentModel: ObservableObject {
     /// shown. A password the *user* chose is not returned: it is already
     /// theirs, and echoing it would only put it somewhere new.
     public func protectFile(generatePassword: Bool) {
-        guard let data = sourceData else { return }
+        // The button is disabled until the two fields match; this is the
+        // backstop, because the consequence of getting it wrong is permanent.
+        guard let data = sourceData, canProtect(generatePassword: generatePassword) else { return }
         stage = .working
         let chosen = generatePassword ? PasswordGenerator.generate() : password
         password = ""
+        confirmation = ""
 
         Task.detached(priority: .userInitiated) {
             do {
@@ -151,6 +166,7 @@ public final class DocumentModel: ObservableObject {
         sourceData = nil
         fileName = ""
         password = ""
+        confirmation = ""
         verification = [:]
         stage = .empty
     }
