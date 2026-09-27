@@ -60,8 +60,8 @@ was rejected for this one known loop because:
 If a second hang of unknown cause turns up in py7zr, this should be revisited,
 and isolation will probably be the right answer.
 
-**Wait for an upstream fix.** The loop should be fixed in py7zr, and should be
-reported there. But the hang affects users now, and an upstream release would
+**Wait for an upstream fix.** The loop should be fixed in py7zr; it is reported
+as [miurahr/py7zr#752](https://github.com/miurahr/py7zr/issues/752). But the hang affects users now, and an upstream release would
 also need a version floor on the optional extra. When one exists, the guard can
 be removed and the floor raised.
 
