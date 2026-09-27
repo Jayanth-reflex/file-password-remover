@@ -7,6 +7,7 @@ import android.net.Uri
 import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.hasTestTag
+import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
@@ -100,11 +101,11 @@ class DocumentScreenJourneyTest {
     @Test
     fun aChosenPasswordMustBeTypedTwice() {
         choose("plain.zip", corpus.bytes("zip-plain"))
-        compose.onNodeWithText("Use my own").performScrollTo().performClick()
+        tapText("Use my own")
 
         type("new-password-field", "typed carefully")
         type("confirm-password-field", "typed carefuly")
-        compose.onNodeWithTag("password-mismatch").assertExists()
+        waitFor("password-mismatch")
         compose.onNodeWithTag("protect-button").performScrollTo().assertIsNotEnabled()
 
         compose.onNodeWithTag("confirm-password-field").performTextReplacement("typed carefully")
@@ -137,12 +138,25 @@ class DocumentScreenJourneyTest {
         waitFor("start-over")
     }
 
+    // Every interaction waits for its target first. "Start over" appears as
+    // soon as the file name is known, while detection is still running on a
+    // background dispatcher; the controls that depend on the result arrive
+    // later, and on a slow emulator measurably later.
     private fun type(tag: String, text: String) {
+        waitFor(tag)
         compose.onNodeWithTag(tag).performScrollTo().performTextInput(text)
     }
 
     private fun tap(tag: String) {
+        waitFor(tag)
         compose.onNodeWithTag(tag).performScrollTo().performClick()
+    }
+
+    private fun tapText(text: String) {
+        compose.waitUntil(timeout) {
+            compose.onAllNodes(hasText(text)).fetchSemanticsNodes().isNotEmpty()
+        }
+        compose.onNodeWithText(text).performScrollTo().performClick()
     }
 
     private fun exists(tag: String): Boolean =
